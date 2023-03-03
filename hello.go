@@ -8,7 +8,8 @@ import (
 
 func main() {
 	dtype := datatypes.FixPointType{true, 10, 22}
-  value := datatypes.FixedPoint{dtype, new(big.Int)}
+  value := new(datatypes.FixedPoint)
+  value.Tp = dtype
   value.SetFloat(big.NewFloat(1.125))
 	fmt.Println(value.Tp)
   fmt.Println(value.ToFloat())
