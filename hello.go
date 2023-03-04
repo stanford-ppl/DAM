@@ -13,4 +13,5 @@ func main() {
   value.SetFloat(big.NewFloat(1.125))
 	fmt.Println(value.Tp)
   fmt.Println(value.ToFloat())
+  fmt.Println(dtype.Min().ToFloat())
 }

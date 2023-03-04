@@ -51,3 +51,18 @@ func (fp *FixedPoint) ToFloat() *big.Float {
 	result := new(big.Float)
 	return result.SetRat(fp.ToRat())
 }
+
+func (fmt *FixPointType) Min() *FixedPoint {
+	result := new(FixedPoint)
+	result.Tp = *fmt
+	if (fmt.Signed) {
+		// The minimum is -(1 << Integer)
+		tmp := big.NewInt(1)
+		tmp.Lsh(tmp, fmt.Integer)
+		tmp.Neg(tmp)
+		result.SetInt(tmp)
+	} else {
+		result.Underlying.SetInt64(0)
+	}
+	return result
+}
