@@ -1,10 +1,13 @@
 package core
 
-struct CommunicationChannel[T] {
+type CommunicationChannel[T any] struct {
 	Name string
-	channel chan T
+	Channel chan T
 }
 
-func NewCommunicationChannel[T](name string, capacity int) *CommunicationChannel {
-	&NewCommunicationChannel[T]{Name:= name, make(chan T, capacity)}
+func NewCommunicationChannel[T any](name string, capacity int) *CommunicationChannel[T] {
+	var newChannel = new(CommunicationChannel[T])
+	newChannel.Name = name
+	newChannel.Channel = make(chan T, capacity)
+	return newChannel
 }

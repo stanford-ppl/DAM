@@ -1,8 +1,8 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name="datatypes",
-    srcs=["datatypes.go"],
-    visibility=["//visibility:public"],
-    importpath="github.com/stanford-ppl/DAM/datatypes"
-    )
+    name = "datatypes",
+    srcs = ["datatypes.go"],
+    importpath = "github.com/stanford-ppl/DAM/datatypes",
+    visibility = ["//visibility:public"],
+)

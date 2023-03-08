@@ -1,7 +1,19 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+# gazelle:prefix github.com/stanford-ppl/DAM
+gazelle(name = "gazelle")
 
 go_binary(
-    name="things",
-    srcs=["hello.go"],
-    deps=["//datatypes:datatypes"]
+    name = "things",
+    embed = [":DAM_lib"],
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "DAM_lib",
+    srcs = ["hello.go"],
+    importpath = "github.com/stanford-ppl/DAM",
+    visibility = ["//visibility:private"],
+    deps = ["//datatypes"],
 )

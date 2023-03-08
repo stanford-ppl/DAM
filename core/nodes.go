@@ -1,6 +1,8 @@
 package core
 
-interface Node {
-	func Tick()
-
+type Node struct {
+	ID int
+	
+	InputTags []InputTag[any, any]
+	
 }
