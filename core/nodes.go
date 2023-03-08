@@ -10,6 +10,10 @@ type NodeOutputChannel[T any] struct {
 	Channel DAMChannel[T]
 }
 
+type NodeBody interface {
+	Tick(node *Node)
+}
+
 type Node struct {
 	ID int
 
@@ -18,6 +22,8 @@ type Node struct {
 
 	InputTags  []InputTag[interface{}, interface{}]
 	OutputTags []OutputTag[interface{}, interface{}]
+
+	Worker NodeBody
 }
 
 func (node *Node) CanRun() bool {
@@ -35,4 +41,11 @@ func (node *Node) CanRun() bool {
 		}
 	}
 	return true
+}
+
+func (node *Node) Tick() {
+	if !node.CanRun() {
+		return
+	}
+	node.Worker.Tick(node)
 }
