@@ -1,7 +1,7 @@
 package core
 
 type TagType[D any, U any] struct {
-	ID int
+	TagID int
 }
 
 type InputTagUpdater[D any, U any] interface {
@@ -10,20 +10,20 @@ type InputTagUpdater[D any, U any] interface {
 }
 
 type InputTag[D any, U any] struct {
-	Tag TagType[D, U] // Points back to the Tag
+	Tag       TagType[D, U] // Points back to the Tag
+	InputPort Port
 
-	State        D
-	InputChannel <-chan U
+	State D
 
 	Updater InputTagUpdater[D, U]
 }
 
 type OutputTagPublisher[D any, U any] interface {
 	// Writes a value of U to OutputChannel
-	Publish(iterator []int)
+	Publish(iterator []int) U
 }
 type OutputTag[D any, U any] struct {
-	Tag           TagType[D, U]
-	OutputChannel chan<- U
-	Publisher     OutputTagPublisher[D, U]
+	Tag        TagType[D, U]
+	OutputPort Port
+	Publisher  OutputTagPublisher[D, U]
 }
