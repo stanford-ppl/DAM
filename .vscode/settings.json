@@ -21,7 +21,7 @@
         "gc_details": false,
         "regenerate_cgo": false,
         "generate": false,
-        "test": false,
+        "test": true,
         "tidy": false,
         "upgrade_dependency": false,
         "vendor": false

@@ -15,5 +15,5 @@ go_library(
     srcs = ["hello.go"],
     importpath = "github.com/stanford-ppl/DAM",
     visibility = ["//visibility:private"],
-    deps = ["//datatypes", "//core"],
+    deps = ["//datatypes"],
 )
