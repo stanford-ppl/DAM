@@ -6,8 +6,8 @@ import (
 )
 
 type FixPointType struct {
-	Signed bool
-	Integer uint
+	Signed   bool
+	Integer  uint
 	Fraction uint
 }
 
@@ -16,19 +16,19 @@ func (fpt FixPointType) String() string {
 }
 
 type FixedPoint struct {
-	Tp FixPointType
+	Tp         FixPointType
 	Underlying big.Int
 }
 
 func (fp *FixedPoint) SetInt(integer *big.Int) {
-	if (!fp.Tp.Signed && integer.Sign() < 0) {
+	if !fp.Tp.Signed && integer.Sign() < 0 {
 		panic("Attempting to convert a negative integer to an unsigned FixedPoint")
 	}
 	fp.Underlying.Lsh(integer, fp.Tp.Fraction)
 }
 
 func (fp *FixedPoint) SetFloat(float *big.Float) {
-	if (!fp.Tp.Signed && float.Signbit()) {
+	if !fp.Tp.Signed && float.Signbit() {
 		panic("Attempting to convert a negative float to an unsigned FixedPoint")
 	}
 	numShift := big.NewInt(1)
@@ -55,7 +55,7 @@ func (fp *FixedPoint) ToFloat() *big.Float {
 func (fmt *FixPointType) Min() *FixedPoint {
 	result := new(FixedPoint)
 	result.Tp = *fmt
-	if (fmt.Signed) {
+	if fmt.Signed {
 		// The minimum is -(1 << Integer)
 		tmp := big.NewInt(1)
 		tmp.Lsh(tmp, fmt.Integer)

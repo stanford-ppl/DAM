@@ -6,7 +6,7 @@ type TagType[D any, U any] struct {
 
 type InputTagUpdater[D any, U any] interface {
 	CanRun(update U) bool
-	Update(update U)
+	Update(state D, update U) D
 }
 
 type InputTag[D any, U any] struct {
@@ -22,6 +22,7 @@ type OutputTagPublisher[D any, U any] interface {
 	// Writes a value of U to OutputChannel
 	Publish(iterator []int) U
 }
+
 type OutputTag[D any, U any] struct {
 	Tag        TagType[D, U]
 	OutputPort Port

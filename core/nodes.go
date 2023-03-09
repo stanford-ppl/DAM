@@ -17,26 +17,26 @@ type NodeBody interface {
 type Node struct {
 	ID int
 
-	InputChannels  []NodeInputChannel[interface{}]
-	OutputChannels []NodeOutputChannel[interface{}]
+	InputChannels  []NodeInputChannel[any]
+	OutputChannels []NodeOutputChannel[any]
 
-	InputTags  []InputTag[interface{}, interface{}]
-	OutputTags []OutputTag[interface{}, interface{}]
+	InputTags  []InputTag[any, any]
+	OutputTags []OutputTag[any, any]
 
 	Worker NodeBody
 }
 
 func (node *Node) CanRun() bool {
-	inputChannelMap := map[int]interface{}{}
+	inputChannelMap := map[int]any{}
 	for _, inputChannel := range node.InputChannels {
 		targetID := inputChannel.ID.ID
-		peeked := inputChannel.Channel.Peek()
-		inputChannelMap[targetID] = peeked
+		head := inputChannel.Channel.Peek()
+		inputChannelMap[targetID] = head
 	}
 
 	for _, inputTag := range node.InputTags {
-		peekValue := inputChannelMap[inputTag.InputPort.ID]
-		if !inputTag.Updater.CanRun(peekValue) {
+		head := inputChannelMap[inputTag.InputPort.ID]
+		if !inputTag.Updater.CanRun(head) {
 			return false
 		}
 	}

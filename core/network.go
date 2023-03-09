@@ -6,7 +6,7 @@ type Port struct {
 }
 
 type Network interface {
-	Tick(channels []CommunicationChannel[interface{}])
+	Tick(channels []CommunicationChannel[any])
 }
 
 type DAMChannel[T any] struct {
@@ -15,7 +15,7 @@ type DAMChannel[T any] struct {
 }
 
 func (channel *DAMChannel[T]) Peek() T {
-	if channel.channel != nil {
+	if channel.head != nil {
 		return *channel.head
 	}
 	tmp := <-channel.channel
@@ -40,15 +40,15 @@ func (channel *DAMChannel[T]) Full() bool {
 	return len(channel.channel) == cap(channel.channel)
 }
 
-func (channel *DAMChannel[T]) Capacity() int {
-	return len(channel.channel)
+func (channel *DAMChannel[T]) Cap() int {
+	return cap(channel.channel)
 }
 
 func (channel *DAMChannel[T]) Empty() bool {
 	return len(channel.channel) == 0
 }
 
-func (channel *DAMChannel[T]) NumElements() int {
+func (channel *DAMChannel[T]) Len() int {
 	return len(channel.channel)
 }
 
