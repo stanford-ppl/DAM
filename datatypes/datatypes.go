@@ -5,17 +5,21 @@ import (
 	"math/big"
 )
 
+type DAMType interface {
+	Validate() bool
+}
+
 type FixPointType struct {
 	Signed   bool
 	Integer  uint
 	Fraction uint
 }
 
-func (fpt *FixPointType) String() string {
+func (fpt FixPointType) String() string {
 	return fmt.Sprintf("Fix[%t, %d, %d]", fpt.Signed, fpt.Integer, fpt.Fraction)
 }
 
-func (fpt *FixPointType) Validate() bool {
+func (fpt FixPointType) Validate() bool {
 	if fpt.Signed {
 		return fpt.Integer > 0
 	}
@@ -23,9 +27,9 @@ func (fpt *FixPointType) Validate() bool {
 	return true
 }
 
-func (fmt *FixPointType) Min() *FixedPoint {
+func (fmt FixPointType) Min() *FixedPoint {
 	result := new(FixedPoint)
-	result.Tp = *fmt
+	result.Tp = fmt
 	if fmt.Signed {
 		// The minimum is -(1 << Integer)
 		tmp := big.NewInt(1)
@@ -39,9 +43,9 @@ func (fmt *FixPointType) Min() *FixedPoint {
 	return result
 }
 
-func (fmt *FixPointType) Max() (result *FixedPoint) {
+func (fmt FixPointType) Max() (result *FixedPoint) {
 	result = new(FixedPoint)
-	result.Tp = *fmt
+	result.Tp = fmt
 	shift := fmt.Integer + fmt.Fraction
 	if fmt.Signed {
 		shift -= 1
@@ -56,15 +60,18 @@ type FixedPoint struct {
 	Underlying big.Int
 }
 
+func (fp FixedPoint) Validate() bool {
+	return true
+	// min := fp.Tp.Min()
+	// max := fp.Tp.Max()
+	// min.Leq(fp) && max.Geq(fp)
+}
+
 func (fp *FixedPoint) SetInt(integer *big.Int) {
 	if !fp.Tp.Signed && integer.Sign() < 0 {
 		panic("Attempting to convert a negative integer to an unsigned FixedPoint")
 	}
 	fp.Underlying.Lsh(integer, fp.Tp.Fraction)
-}
-
-func (fp *FixedPoint) Validate() bool {
-	return true
 }
 
 func (fp *FixedPoint) SetFloat(float *big.Float) {
@@ -79,7 +86,7 @@ func (fp *FixedPoint) SetFloat(float *big.Float) {
 	intermediate.Int(&fp.Underlying)
 }
 
-func (fp *FixedPoint) ToRat() *big.Rat {
+func (fp FixedPoint) ToRat() *big.Rat {
 	result := new(big.Rat)
 	denom := big.NewInt(1)
 	denom.Lsh(denom, fp.Tp.Fraction)
@@ -87,13 +94,32 @@ func (fp *FixedPoint) ToRat() *big.Rat {
 	return result
 }
 
-func (fp *FixedPoint) ToFloat() *big.Float {
+func (fp FixedPoint) ToFloat() *big.Float {
 	result := new(big.Float)
 	return result.SetRat(fp.ToRat())
 }
 
-func (fp *FixedPoint) ToInt() *big.Int {
+func (fp FixedPoint) ToInt() *big.Int {
 	result := new(big.Int)
 	result.Rsh(&fp.Underlying, fp.Tp.Fraction)
+	return result
+}
+
+func checkFormats(seq ...FixedPoint) {
+	if len(seq) == 0 {
+		return
+	}
+	refTp := seq[0].Tp
+	for _, v := range seq {
+		if refTp != v.Tp {
+			panic(fmt.Sprintf("Fixed Point Type Mismatch: %s %s", refTp, v.Tp))
+		}
+	}
+}
+
+func FixedAdd(a FixedPoint, b FixedPoint) FixedPoint {
+	checkFormats(a, b)
+	result := FixedPoint{Tp: a.Tp}
+	result.Underlying.Add(&a.Underlying, &b.Underlying)
 	return result
 }

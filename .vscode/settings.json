@@ -28,7 +28,7 @@
       },
     },
     "go.useLanguageServer": true,
-    "go.buildOnSave": "off",
+    "go.buildOnSave": "workspace",
     "go.lintOnSave": "off",
     "go.vetOnSave": "off",
   }
