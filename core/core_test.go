@@ -60,4 +60,7 @@ func TestSimpleNodeIO(t *testing.T) {
 	node.Tick()
 	recv := outputChannel.Channel.Dequeue().(datatypes.FixedPoint)
 	t.Logf("Output %d\n", recv.ToInt())
+	if recv.ToInt().Int64() != 8 {
+		t.Errorf("Expected 3+5=8, got %s", recv.ToInt())
+	}
 }
