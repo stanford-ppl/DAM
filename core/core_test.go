@@ -43,24 +43,42 @@ func TestSimpleNodeIO(t *testing.T) {
 	outputChannel.Port.ID = 0
 
 	fpt := datatypes.FixPointType{true, 32, 0}
-	aVal := datatypes.FixedPoint{Tp: fpt}
-	aVal.SetInt(big.NewInt(3))
 
-	bVal := datatypes.FixedPoint{Tp: fpt}
-	bVal.SetInt(big.NewInt(5))
+	stuffA := func() {
+		for i := 1; i < 10; i++ {
+			aVal := datatypes.FixedPoint{Tp: fpt}
+			aVal.SetInt(big.NewInt(int64(i)))
+			inputChannelA.Channel.Enqueue(aVal)
+		}
+	}
 
-	inputChannelA.Channel.Enqueue(aVal)
-	inputChannelB.Channel.Enqueue(bVal)
+	stuffB := func() {
+		for i := 1; i < 10; i++ {
+			bVal := datatypes.FixedPoint{Tp: fpt}
+			bVal.SetInt(big.NewInt(int64(2 * i)))
+			inputChannelB.Channel.Enqueue(bVal)
+		}
+	}
+
+	go stuffA()
+	go stuffB()
 
 	node.Step = func(node *core.Node) {
 		a := node.InputChannels[0].Channel.Dequeue().(datatypes.FixedPoint)
 		b := node.InputChannels[1].Channel.Dequeue().(datatypes.FixedPoint)
 		node.OutputChannels[0].Channel.Enqueue(datatypes.FixedAdd(a, b))
 	}
-	node.Tick()
-	recv := outputChannel.Channel.Dequeue().(datatypes.FixedPoint)
-	t.Logf("Output %d\n", recv.ToInt())
-	if recv.ToInt().Int64() != 8 {
-		t.Errorf("Expected 3+5=8, got %s", recv.ToInt())
+	go (func() {
+		for i := 1; i < 10; i++ {
+			node.Tick()
+		}
+	})()
+
+	for i := 1; i < 10; i++ {
+		recv := outputChannel.Channel.Dequeue().(datatypes.FixedPoint)
+		t.Logf("Output %d\n", recv.ToInt())
+		if recv.ToInt().Int64() != int64(3*i) {
+			t.Errorf("Expected: %d, received: %d", recv.ToInt().Int64(), 3*i)
+		}
 	}
 }
