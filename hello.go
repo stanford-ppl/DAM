@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/stanford-ppl/DAM/datatypes"
+	datatypes "github.com/stanford-ppl/DAM/datatypes/fixed"
 )
 
 func main() {

@@ -1,8 +1,6 @@
 package core
 
-import (
-	"github.com/stanford-ppl/DAM/datatypes"
-)
+import datatypes "github.com/stanford-ppl/DAM/datatypes/base"
 
 type Port struct {
 	ID     int

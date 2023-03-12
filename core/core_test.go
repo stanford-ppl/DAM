@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/stanford-ppl/DAM/core"
-	"github.com/stanford-ppl/DAM/datatypes"
+	"github.com/stanford-ppl/DAM/datatypes/fixed"
 )
 
 func TestSimpleNodeIO(t *testing.T) {

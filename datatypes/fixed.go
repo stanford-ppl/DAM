@@ -5,10 +5,6 @@ import (
 	"math/big"
 )
 
-type DAMType interface {
-	Validate() bool
-}
-
 type FixPointType struct {
 	Signed   bool
 	Integer  uint

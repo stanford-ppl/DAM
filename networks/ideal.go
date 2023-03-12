@@ -2,7 +2,7 @@ package networks
 
 import (
 	"github.com/stanford-ppl/DAM/core"
-	"github.com/stanford-ppl/DAM/datatypes"
+	datatypes "github.com/stanford-ppl/DAM/datatypes/base"
 )
 
 // Stateless ideal network, which has a 1-cycle latency between enqueue and dequeue.

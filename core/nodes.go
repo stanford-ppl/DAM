@@ -1,6 +1,8 @@
 package core
 
-import "github.com/stanford-ppl/DAM/datatypes"
+import (
+	datatypes "github.com/stanford-ppl/DAM/datatypes/base"
+)
 
 type NodeInputChannel struct {
 	Port    Port
