@@ -2,6 +2,7 @@ package core
 
 import (
 	"math/big"
+	"sync"
 	"testing"
 
 	"github.com/stanford-ppl/DAM/core"
@@ -9,15 +10,14 @@ import (
 )
 
 func TestSimpleNodeIO(t *testing.T) {
-	inputA := core.MakeChannel[datatypes.FixedPoint](8)
-	inputB := core.MakeChannel[datatypes.FixedPoint](8)
-	output := core.MakeChannel[datatypes.FixedPoint](8)
+	var channelSize uint = 10
+	inputA := core.MakeChannel[datatypes.FixedPoint](channelSize)
+	inputB := core.MakeChannel[datatypes.FixedPoint](channelSize)
+	output := core.MakeChannel[datatypes.FixedPoint](channelSize)
 	inputChannelA := core.NodeInputChannel{
-		Port:    core.Port{},
 		Channel: &inputA,
 	}
 	inputChannelB := core.NodeInputChannel{
-		Port:    core.Port{},
 		Channel: &inputB,
 	}
 	inputChannels := map[int]core.NodeInputChannel{
@@ -25,7 +25,6 @@ func TestSimpleNodeIO(t *testing.T) {
 		1: inputChannelB,
 	}
 	outputChannel := core.NodeOutputChannel{
-		Port:    core.Port{},
 		Channel: &output,
 	}
 	node := core.Node{
@@ -44,41 +43,51 @@ func TestSimpleNodeIO(t *testing.T) {
 
 	fpt := datatypes.FixPointType{true, 32, 0}
 
+	var wg sync.WaitGroup
 	stuffA := func() {
-		for i := 1; i < 10; i++ {
+		for i := 0; i < 10; i++ {
 			aVal := datatypes.FixedPoint{Tp: fpt}
 			aVal.SetInt(big.NewInt(int64(i)))
 			inputChannelA.Channel.Enqueue(aVal)
 		}
+		wg.Done()
 	}
 
 	stuffB := func() {
-		for i := 1; i < 10; i++ {
+		for i := 0; i < 10; i++ {
 			bVal := datatypes.FixedPoint{Tp: fpt}
 			bVal.SetInt(big.NewInt(int64(2 * i)))
 			inputChannelB.Channel.Enqueue(bVal)
 		}
+		wg.Done()
 	}
-
-	go stuffA()
-	go stuffB()
 
 	node.Step = func(node *core.Node) {
 		a := node.InputChannels[0].Channel.Dequeue().(datatypes.FixedPoint)
 		b := node.InputChannels[1].Channel.Dequeue().(datatypes.FixedPoint)
 		node.OutputChannels[0].Channel.Enqueue(datatypes.FixedAdd(a, b))
 	}
+
+	wg.Add(4)
+
+	go stuffA()
+	go stuffB()
 	go (func() {
-		for i := 1; i < 10; i++ {
+		for i := 0; i < 10; i++ {
 			node.Tick()
 		}
+		wg.Done()
 	})()
 
-	for i := 1; i < 10; i++ {
-		recv := outputChannel.Channel.Dequeue().(datatypes.FixedPoint)
-		t.Logf("Output %d\n", recv.ToInt())
-		if recv.ToInt().Int64() != int64(3*i) {
-			t.Errorf("Expected: %d, received: %d", recv.ToInt().Int64(), 3*i)
+	go (func() {
+		for i := 0; i < 10; i++ {
+			recv := outputChannel.Channel.Dequeue().(datatypes.FixedPoint)
+			t.Logf("Output %d\n", recv.ToInt())
+			if recv.ToInt().Int64() != int64(3*i) {
+				t.Errorf("Expected: %d, received: %d", recv.ToInt().Int64(), 3*i)
+			}
 		}
-	}
+		wg.Done()
+	})()
+	wg.Wait()
 }
