@@ -5,14 +5,14 @@ load("@bazel_gazelle//:def.bzl", "gazelle")
 gazelle(name = "gazelle")
 
 go_binary(
-    name = "things",
+    name = "main",
     embed = [":DAM_lib"],
     visibility = ["//visibility:public"],
 )
 
 go_library(
     name = "DAM_lib",
-    srcs = ["hello.go"],
+    srcs = ["main.go"],
     importpath = "github.com/stanford-ppl/DAM",
     visibility = ["//visibility:private"],
     deps = ["//datatypes:fixed"],
