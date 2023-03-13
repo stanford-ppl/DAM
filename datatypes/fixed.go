@@ -5,17 +5,17 @@ import (
 	"math/big"
 )
 
-type FixPointType struct {
+type FixedPointType struct {
 	Signed   bool
 	Integer  uint
 	Fraction uint
 }
 
-func (fpt FixPointType) String() string {
+func (fpt FixedPointType) String() string {
 	return fmt.Sprintf("Fix[%t, %d, %d]", fpt.Signed, fpt.Integer, fpt.Fraction)
 }
 
-func (fpt FixPointType) Validate() bool {
+func (fpt FixedPointType) Validate() bool {
 	if fpt.Signed {
 		return fpt.Integer > 0
 	}
@@ -23,7 +23,7 @@ func (fpt FixPointType) Validate() bool {
 	return true
 }
 
-func (fmt FixPointType) Min() *FixedPoint {
+func (fmt FixedPointType) Min() *FixedPoint {
 	result := new(FixedPoint)
 	result.Tp = fmt
 	if fmt.Signed {
@@ -39,7 +39,7 @@ func (fmt FixPointType) Min() *FixedPoint {
 	return result
 }
 
-func (fmt FixPointType) Max() (result *FixedPoint) {
+func (fmt FixedPointType) Max() (result *FixedPoint) {
 	result = new(FixedPoint)
 	result.Tp = fmt
 	shift := fmt.Integer + fmt.Fraction
@@ -52,7 +52,7 @@ func (fmt FixPointType) Max() (result *FixedPoint) {
 }
 
 type FixedPoint struct {
-	Tp         FixPointType
+	Tp         FixedPointType
 	Underlying big.Int
 }
 

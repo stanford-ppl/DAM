@@ -7,7 +7,7 @@ import (
 )
 
 func TestFixedPointFloatRoundTrip(t *testing.T) {
-	fpt := FixPointType{false, 3, 13}
+	fpt := FixedPointType{false, 3, 13}
 	fp := FixedPoint{Tp: fpt}
 	flt := big.NewFloat(1.125)
 	fp.SetFloat(flt)
@@ -24,7 +24,7 @@ func TestFixedPointFloatRoundTrip(t *testing.T) {
 }
 
 func TestFixedPointIntRoundTrip(t *testing.T) {
-	fpt := FixPointType{false, 3, 13}
+	fpt := FixedPointType{false, 3, 13}
 	fp := FixedPoint{Tp: fpt}
 	integer := big.NewInt(1)
 	fp.SetInt(integer)
@@ -35,7 +35,7 @@ func TestFixedPointIntRoundTrip(t *testing.T) {
 }
 
 func TestFixedPointMin(t *testing.T) {
-	fpt := FixPointType{true, 32, 0}
+	fpt := FixedPointType{true, 32, 0}
 	minimum := fpt.Min().ToInt()
 	reference := big.NewInt(math.MinInt32)
 	minimum.Sub(minimum, reference)
@@ -45,7 +45,7 @@ func TestFixedPointMin(t *testing.T) {
 }
 
 func TestFixedPointMax(t *testing.T) {
-	fpt := FixPointType{true, 32, 0}
+	fpt := FixedPointType{true, 32, 0}
 	max := fpt.Min().ToInt()
 	reference := big.NewInt(math.MaxInt32)
 	max.Sub(max, reference)
@@ -55,7 +55,7 @@ func TestFixedPointMax(t *testing.T) {
 }
 
 func TestFixedPointMaxUnsigned(t *testing.T) {
-	fpt := FixPointType{false, 32, 0}
+	fpt := FixedPointType{false, 32, 0}
 	max := fpt.Min().ToInt()
 	reference := big.NewInt(math.MaxUint32)
 	max.Sub(max, reference)

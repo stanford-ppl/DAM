@@ -16,13 +16,13 @@ func TestNewVector(t *testing.T) {
 
 func TestGetAndSet(t *testing.T) {
 
-	v := NewVector[datatypes.FixPointType](5)
+	v := NewVector[datatypes.FixedPointType](5)
 
-	v.set(0 , datatypes.FixPointType{false, 3, 13})
-	v.set(1 , datatypes.FixPointType{true, 1, 21})
+	v.set(0 , datatypes.FixedPointType{false, 3, 13})
+	v.set(1 , datatypes.FixedPointType{true, 1, 21})
 
-	var elem0 datatypes.FixPointType = v.get(0)
-	var elem1 datatypes.FixPointType = v.get(1)
+	var elem0 datatypes.FixedPointType = v.get(0)
+	var elem1 datatypes.FixedPointType = v.get(1)
 
 	if elem0.Signed != false || elem0.Integer != 3 || elem0.Fraction != 13 {
 		t.Errorf("Fail:  Vector Element at index 0 != Element set at index 0")

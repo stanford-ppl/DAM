@@ -41,7 +41,7 @@ func TestSimpleNodeIO(t *testing.T) {
 	outputChannel.Port.Target = &node
 	outputChannel.Port.ID = 0
 
-	fpt := datatypes.FixPointType{true, 32, 0}
+	fpt := datatypes.FixedPointType{true, 32, 0}
 
 	var wg sync.WaitGroup
 	stuffA := func() {
