@@ -22,10 +22,10 @@ func (v *Vector[T]) Width() int {
 }
 
 //TODO:  Need to return optional error if index is out of bounds
-func (v *Vector[T]) set(index int , value T) {
+func (v *Vector[T]) Set(index int , value T) {
 	v.data[index] = value
 }
 
-func (v *Vector[T]) get(index int) T {
+func (v *Vector[T]) Get(index int) T {
 	return v.data[index]
 }
