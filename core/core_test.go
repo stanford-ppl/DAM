@@ -7,44 +7,31 @@ import (
 
 	"github.com/stanford-ppl/DAM/core"
 	"github.com/stanford-ppl/DAM/datatypes/fixed"
+	//"github.com/stanford-ppl/DAM/networks/ideal_network"
 )
 
 func TestSimpleNodeIO(t *testing.T) {
+
 	var channelSize uint = 10
-	inputA := core.MakeChannel[datatypes.FixedPoint](channelSize)
-	inputB := core.MakeChannel[datatypes.FixedPoint](channelSize)
-	output := core.MakeChannel[datatypes.FixedPoint](channelSize)
-	inputChannelA := core.NodeInputChannel{
-		Channel: &inputA,
+
+	inputChannelA := core.NodeInputChannel{ Channel: core.MakeChannel[datatypes.FixedPoint](channelSize), }
+	inputChannelB := core.NodeInputChannel{ Channel: core.MakeChannel[datatypes.FixedPoint](channelSize), }
+	outputChannel := core.NodeOutputChannel{ Channel: core.MakeChannel[datatypes.FixedPoint](channelSize), }
+	
+	node := core.NewNode()
+	node.SetID(0)
+	node.SetInputChannel(0 , inputChannelA)
+	node.SetInputChannel(1 , inputChannelB)
+	node.SetOutputChannel(0 , outputChannel)
+
+	if !node.Validate() {
+		t.Errorf("Node %d failed validation", node.ID)	
 	}
-	inputChannelB := core.NodeInputChannel{
-		Channel: &inputB,
-	}
-	inputChannels := map[int]core.NodeInputChannel{
-		0: inputChannelA,
-		1: inputChannelB,
-	}
-	outputChannel := core.NodeOutputChannel{
-		Channel: &output,
-	}
-	node := core.Node{
-		ID:            0,
-		InputChannels: inputChannels,
-		OutputChannels: map[int]core.NodeOutputChannel{
-			0: outputChannel,
-		},
-	}
-	inputChannelA.Port.Target = &node
-	inputChannelA.Port.ID = 0
-	inputChannelB.Port.Target = &node
-	inputChannelB.Port.ID = 1
-	outputChannel.Port.Target = &node
-	outputChannel.Port.ID = 0
 
 	fpt := datatypes.FixedPointType{true, 32, 0}
 
 	var wg sync.WaitGroup
-	stuffA := func() {
+	genA := func() {
 		for i := 0; i < 10; i++ {
 			aVal := datatypes.FixedPoint{Tp: fpt}
 			aVal.SetInt(big.NewInt(int64(i)))
@@ -53,7 +40,7 @@ func TestSimpleNodeIO(t *testing.T) {
 		wg.Done()
 	}
 
-	stuffB := func() {
+	genB := func() {
 		for i := 0; i < 10; i++ {
 			bVal := datatypes.FixedPoint{Tp: fpt}
 			bVal.SetInt(big.NewInt(int64(2 * i)))
@@ -68,18 +55,14 @@ func TestSimpleNodeIO(t *testing.T) {
 		node.OutputChannels[0].Channel.Enqueue(datatypes.FixedAdd(a, b))
 	}
 
-	wg.Add(4)
-
-	go stuffA()
-	go stuffB()
-	go (func() {
+	main := func() {
 		for i := 0; i < 10; i++ {
 			node.Tick()
 		}
 		wg.Done()
-	})()
+	}
 
-	go (func() {
+	checker := func() {
 		for i := 0; i < 10; i++ {
 			recv := outputChannel.Channel.Dequeue().(datatypes.FixedPoint)
 			t.Logf("Output %d\n", recv.ToInt())
@@ -88,6 +71,14 @@ func TestSimpleNodeIO(t *testing.T) {
 			}
 		}
 		wg.Done()
-	})()
+	}
+
+	wg.Add(4)
+
+	go genA()
+	go genB()
+	go main()
+	go checker()
+	
 	wg.Wait()
 }

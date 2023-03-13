@@ -8,7 +8,7 @@ type Port struct {
 }
 
 type Network interface {
-	Tick(channels []CommunicationChannel[datatypes.DAMType])
+	TickChannels()
 }
 
 type DAMChannel struct {
@@ -16,8 +16,8 @@ type DAMChannel struct {
 	head    *datatypes.DAMType
 }
 
-func MakeChannel[T datatypes.DAMType](channelSize uint) DAMChannel {
-	return DAMChannel{make(chan datatypes.DAMType, channelSize), nil}
+func MakeChannel[T datatypes.DAMType](channelSize uint) *DAMChannel {
+	return &DAMChannel{make(chan datatypes.DAMType, channelSize), nil}
 }
 
 func (channel *DAMChannel) Peek() datatypes.DAMType {

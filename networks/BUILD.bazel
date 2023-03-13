@@ -4,6 +4,6 @@ go_library(
     name = "ideal_network",
     srcs = ["ideal.go"],
     deps = ["//core:core", "//datatypes:base"],
-    importpath = "github.com/stanford-ppl/DAM/networks/ideal",
+    importpath = "github.com/stanford-ppl/DAM/networks/ideal_network",
     visibility = ["//visibility:public"],
 )
