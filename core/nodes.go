@@ -46,10 +46,12 @@ func (node *Node) SetID(id int) {
 
 func (node *Node) SetInputChannel(portNum int, inputchan NodeInputChannel) {
 	node.InputChannels[portNum] = inputchan
+	inputchan.Port = Port{Target: node, ID: portNum}
 }
 
 func (node *Node) SetOutputChannel(portNum int, outputchan NodeOutputChannel) {
 	node.OutputChannels[portNum] = outputchan
+	outputchan.Port = Port{Target: node, ID: portNum}
 }
 
 func (node *Node) SetInputTag(portNum int, input InputTag[datatypes.DAMType, datatypes.DAMType]) {
@@ -94,22 +96,9 @@ func (node *Node) Validate() bool {
 }
 
 func (node *Node) CanRun() bool {
-	// Cannot publish if any of the outputTags are full
-	for _, outputChannel := range node.OutputChannels {
-		if outputChannel.Channel.Full() {
-			return false
-		}
-	}
-
-	for id, inTag := range node.InputTags {
+	for id := range node.InputTags {
 		inputChannel := node.InputChannels[id]
-		var head datatypes.DAMType
-		if inputChannel.Channel.Empty() {
-			head = inTag.Null
-		} else {
-			head = inputChannel.Channel.Peek()
-		}
-		if !node.InputTags[id].Updater.CanRun(head) {
+		if !node.InputTags[id].Updater.CanRun(inputChannel.Channel.Peek()) {
 			return false
 		}
 	}
@@ -119,13 +108,7 @@ func (node *Node) CanRun() bool {
 func (node *Node) UpdateTagData(enabled bool) {
 	for id, inTag := range node.InputTags {
 		inputChannel := node.InputChannels[id]
-		var update datatypes.DAMType
-		if inputChannel.Channel.Empty() {
-			update = inTag.Null
-		} else {
-			update = inputChannel.Channel.Dequeue()
-		}
-		inTag.State = inTag.Updater.Update(inTag.State, update, enabled)
+		inTag.State = inTag.Updater.Update(inTag.State, inputChannel.Channel.Dequeue(), enabled)
 	}
 }
 

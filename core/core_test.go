@@ -9,7 +9,7 @@ import (
 )
 
 func TestSimpleNodeIO(t *testing.T) {
-	var channelSize uint = 10
+	var channelSize uint = 1
 
 	inputChannelA := NodeInputChannel{Channel: MakeChannel[datatypes.FixedPoint](channelSize)}
 	inputChannelB := NodeInputChannel{Channel: MakeChannel[datatypes.FixedPoint](channelSize)}
@@ -49,12 +49,17 @@ func TestSimpleNodeIO(t *testing.T) {
 	node.Step = func(node *Node) {
 		a := node.InputChannels[0].Channel.Dequeue().(datatypes.FixedPoint)
 		b := node.InputChannels[1].Channel.Dequeue().(datatypes.FixedPoint)
-		node.OutputChannels[0].Channel.Enqueue(datatypes.FixedAdd(a, b))
+		c := datatypes.FixedAdd(a, b)
+		node.OutputChannels[0].Channel.Enqueue(c)
+		t.Logf("%d + %d = %d", a.ToInt().Int64(), b.ToInt().Int64(), c.ToInt().Int64())
 	}
 
 	main := func() {
 		for i := 0; i < 10; i++ {
+			t.Logf("PreTicking:  %d %d %d", i, inputChannelA.Channel.Len(), inputChannelB.Channel.Len())
 			node.Tick()
+			t.Logf("PostTicking: %d %d %d", i, inputChannelA.Channel.Len(), inputChannelB.Channel.Len())
+			t.Logf("Output Channel Size: %d", outputChannel.Channel.Len())
 		}
 		wg.Done()
 	}
