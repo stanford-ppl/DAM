@@ -57,10 +57,15 @@ type FixedPoint struct {
 }
 
 func (fp FixedPoint) Validate() bool {
+	min := fp.Tp.Min()
+	if Cmp(fp, *min) < 0 {
+		return false
+	}
+	max := fp.Tp.Max()
+	if Cmp(fp, *max) > 0 {
+		return false
+	}
 	return true
-	// min := fp.Tp.Min()
-	// max := fp.Tp.Max()
-	// min.Leq(fp) && max.Geq(fp)
 }
 
 func (fp *FixedPoint) SetInt(integer *big.Int) {
@@ -99,6 +104,10 @@ func (fp FixedPoint) ToInt() *big.Int {
 	result := new(big.Int)
 	result.Rsh(&fp.Underlying, fp.Tp.Fraction)
 	return result
+}
+
+func Cmp(a, b FixedPoint) int {
+	return a.ToRat().Cmp(b.ToRat())
 }
 
 func checkFormats(seq ...FixedPoint) {

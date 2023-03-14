@@ -63,3 +63,25 @@ func TestFixedPointMaxUnsigned(t *testing.T) {
 		t.Errorf("I32 Min was incorrect: got error of: %d", max.Int64())
 	}
 }
+
+func TestFixedPointValidateFail(t *testing.T) {
+	fpt := FixedPointType{true, 32, 32}
+	// Create a very large number outside of fpt
+	val := FixedPoint{Tp: fpt}
+	val.SetInt(big.NewInt(1 << 35))
+	if val.Validate() {
+		// This shouldn't validate!
+		t.Errorf("%s should not have validated!", val)
+	}
+}
+
+func TestFixedPointValidatePass(t *testing.T) {
+	fpt := FixedPointType{true, 32, 32}
+	// Create a very large number inside of range
+	val := FixedPoint{Tp: fpt}
+	val.SetInt(big.NewInt(1 << 30))
+	if !val.Validate() {
+		// This shouldn't validate!
+		t.Errorf("%s should have validated!", val)
+	}
+}
