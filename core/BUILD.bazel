@@ -9,11 +9,12 @@ go_library(
     ],
     importpath = "github.com/stanford-ppl/DAM/core",
     visibility = ["//visibility:public"],
-    deps = ["//datatypes:base"]
+    deps = ["//datatypes:datatypes"]
 )
 
 go_test(
     name = "core_test",
     srcs = ["core_test.go"],
-    deps = [":core", "//datatypes:base", "//datatypes:fixed", "//networks:ideal_network", "//vector"]
+    deps = ["//datatypes:datatypes", "//networks:ideal_network"],
+    embed = [":core"]
 )

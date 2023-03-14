@@ -1,7 +1,7 @@
 package core
 
 import (
-	datatypes "github.com/stanford-ppl/DAM/datatypes/base"
+	"github.com/stanford-ppl/DAM/datatypes"
 )
 
 type NodeInputChannel struct {
@@ -22,8 +22,8 @@ type Node struct {
 	OutputChannels map[int]NodeOutputChannel
 
 	// Maps port number to the Tag
-	InputTags  map[int]InputTag[datatypes.DAMType , datatypes.DAMType]
-	OutputTags map[int]OutputTag[datatypes.DAMType , datatypes.DAMType]
+	InputTags  map[int]InputTag[datatypes.DAMType, datatypes.DAMType]
+	OutputTags map[int]OutputTag[datatypes.DAMType, datatypes.DAMType]
 
 	State interface{}
 
@@ -44,19 +44,19 @@ func (node *Node) SetID(id int) {
 	node.ID = id
 }
 
-func (node *Node) SetInputChannel(portNum int , inputchan NodeInputChannel) {
+func (node *Node) SetInputChannel(portNum int, inputchan NodeInputChannel) {
 	node.InputChannels[portNum] = inputchan
 }
 
-func (node *Node) SetOutputChannel(portNum int , outputchan NodeOutputChannel) {
+func (node *Node) SetOutputChannel(portNum int, outputchan NodeOutputChannel) {
 	node.OutputChannels[portNum] = outputchan
 }
 
-func (node *Node) SetInputTag(portNum int , input InputTag[datatypes.DAMType, datatypes.DAMType]) {
+func (node *Node) SetInputTag(portNum int, input InputTag[datatypes.DAMType, datatypes.DAMType]) {
 	node.InputTags[portNum] = input
 }
 
-func (node *Node) SetOutputTag(portNum int , output OutputTag[datatypes.DAMType, datatypes.DAMType]) {
+func (node *Node) SetOutputTag(portNum int, output OutputTag[datatypes.DAMType, datatypes.DAMType]) {
 	node.OutputTags[portNum] = output
 }
 
