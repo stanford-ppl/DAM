@@ -25,5 +25,10 @@ func (v *Vector[T]) Get(index int) T {
 }
 
 func (v Vector[T]) Validate() bool {
+	for _, v := range v.data {
+		if !v.Validate() {
+			return false
+		}
+	}
 	return true
 }
