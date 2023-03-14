@@ -1,6 +1,9 @@
 package core
 
 import (
+	"fmt"
+	"math/big"
+
 	"github.com/stanford-ppl/DAM/datatypes"
 )
 
@@ -15,7 +18,8 @@ type NodeOutputChannel struct {
 }
 
 type Node struct {
-	ID int
+	ID        int
+	tickCount big.Int
 
 	// maps port number to Input Channels
 	InputChannels  map[int]NodeInputChannel
@@ -37,6 +41,7 @@ func NewNode() Node {
 	n.OutputChannels = map[int]NodeOutputChannel{}
 	n.InputTags = map[int]InputTag[datatypes.DAMType, datatypes.DAMType]{}
 	n.OutputTags = map[int]OutputTag[datatypes.DAMType, datatypes.DAMType]{}
+	n.tickCount.SetInt64(0)
 	return n
 }
 
@@ -98,7 +103,11 @@ func (node *Node) Validate() bool {
 func (node *Node) CanRun() bool {
 	for id := range node.InputTags {
 		inputChannel := node.InputChannels[id]
-		if !node.InputTags[id].Updater.CanRun(inputChannel.Channel.Peek()) {
+		peeked := inputChannel.Channel.Peek()
+		if peeked.Time.Cmp(&node.tickCount) > 0 {
+			return false
+		}
+		if !node.InputTags[id].Updater.CanRun(peeked.Data) {
 			return false
 		}
 	}
@@ -108,7 +117,11 @@ func (node *Node) CanRun() bool {
 func (node *Node) UpdateTagData(enabled bool) {
 	for id, inTag := range node.InputTags {
 		inputChannel := node.InputChannels[id]
-		inTag.State = inTag.Updater.Update(inTag.State, inputChannel.Channel.Dequeue(), enabled)
+		dequeued := inputChannel.Channel.Dequeue()
+		if node.tickCount.Cmp(&dequeued.Time) < 0 {
+			panic(fmt.Sprintf("Ended up in future! Reading data at %s when we're at %s", dequeued.Time.String(), node.tickCount.String()))
+		}
+		inTag.State = inTag.Updater.Update(inTag.State, dequeued.Data, enabled)
 	}
 }
 
@@ -130,7 +143,18 @@ func (node *Node) Tick() {
 		if willPublish {
 			publishData := outputTag.Publisher.Publish(node.State)
 			targetChannel := node.OutputChannels[id].Channel
-			targetChannel.Enqueue(publishData)
+			targetChannel.Enqueue(MakeElement(&node.tickCount, publishData))
 		}
 	}
+	node.tickCount.Add(&node.tickCount, big.NewInt(1))
+}
+
+func (node Node) IsPresent(checkedChannels []NodeInputChannel) bool {
+	for _, v := range checkedChannels {
+		stamp := v.Channel.Peek().Time
+		if node.tickCount.Cmp(&stamp) < 0 {
+			return false
+		}
+	}
+	return true
 }

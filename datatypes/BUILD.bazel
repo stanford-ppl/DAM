@@ -2,21 +2,28 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "datatypes",
-    srcs = ["base.go", "fixed.go", "vector.go"],
+    srcs = [
+        "base.go",
+        "fixed.go",
+        "vector.go",
+    ],
     importpath = "github.com/stanford-ppl/DAM/datatypes",
-    visibility = ["//visibility:public"]
+    visibility = ["//visibility:public"],
 )
 
 go_test(
     name = "datatypes_test",
-    srcs = ["datatypes_test.go"],
+    size = "small",
+    srcs = [
+        "datatypes_test.go",
+        "vector_test.go",
+    ],
     embed = [":datatypes"],
-    size="small"
 )
 
 go_test(
     name = "vector_test",
+    size = "small",
     srcs = ["vector_test.go"],
     embed = [":datatypes"],
-    size="small"
 )

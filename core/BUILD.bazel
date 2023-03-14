@@ -3,18 +3,21 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "core",
     srcs = [
+        "network.go",
         "nodes.go",
         "tag.go",
-        "network.go",
     ],
     importpath = "github.com/stanford-ppl/DAM/core",
     visibility = ["//visibility:public"],
-    deps = ["//datatypes:datatypes"]
+    deps = ["//datatypes"],
 )
 
 go_test(
     name = "core_test",
     srcs = ["core_test.go"],
-    deps = ["//datatypes:datatypes", "//networks:ideal_network"],
-    embed = [":core"]
+    embed = [":core"],
+    deps = [
+        "//datatypes",
+        "@org_golang_x_exp//maps",
+    ],
 )

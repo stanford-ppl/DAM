@@ -3,7 +3,21 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "ideal_network",
     srcs = ["ideal.go"],
-    deps = ["//core:core", "//datatypes:datatypes"],
     importpath = "github.com/stanford-ppl/DAM/networks/ideal_network",
     visibility = ["//visibility:public"],
+    deps = [
+        "//core",
+        "//datatypes",
+    ],
+)
+
+go_library(
+    name = "networks",
+    srcs = ["ideal.go"],
+    importpath = "github.com/stanford-ppl/DAM/networks",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core",
+        "//datatypes",
+    ],
 )

@@ -19,10 +19,17 @@ http_archive(
 )
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
-load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 
 go_rules_dependencies()
 
 go_register_toolchains(version = "1.19.3")
+
+# Declare Go direct dependencies.
+go_repository(
+    name = "org_golang_x_exp",
+    importpath = "golang.org/x/exp",
+    commit = "db074128a8ec7a8f3c962aa7a131dba993519cf2"
+)
 
 gazelle_dependencies()

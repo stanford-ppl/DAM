@@ -1,6 +1,10 @@
 package core
 
-import "github.com/stanford-ppl/DAM/datatypes"
+import (
+	"math/big"
+
+	"github.com/stanford-ppl/DAM/datatypes"
+)
 
 type Port struct {
 	ID     int
@@ -12,15 +16,26 @@ type Network interface {
 }
 
 type DAMChannel struct {
-	channel chan datatypes.DAMType
-	head    *datatypes.DAMType
+	channel chan ChannelElement
+	head    *ChannelElement
+}
+
+type ChannelElement struct {
+	Time big.Int
+	Data datatypes.DAMType
+}
+
+func MakeElement(time *big.Int, data datatypes.DAMType) ChannelElement {
+	cE := ChannelElement{Data: data}
+	cE.Time.Set(time)
+	return cE
 }
 
 func MakeChannel[T datatypes.DAMType](channelSize uint) *DAMChannel {
-	return &DAMChannel{make(chan datatypes.DAMType, channelSize), nil}
+	return &DAMChannel{make(chan ChannelElement, channelSize), nil}
 }
 
-func (channel *DAMChannel) Peek() datatypes.DAMType {
+func (channel *DAMChannel) Peek() ChannelElement {
 	if channel.head != nil {
 		return *channel.head
 	}
@@ -29,7 +44,7 @@ func (channel *DAMChannel) Peek() datatypes.DAMType {
 	return *channel.head
 }
 
-func (channel *DAMChannel) Dequeue() datatypes.DAMType {
+func (channel *DAMChannel) Dequeue() ChannelElement {
 	if channel.head != nil {
 		tmp := *channel.head
 		channel.head = nil
@@ -39,8 +54,8 @@ func (channel *DAMChannel) Dequeue() datatypes.DAMType {
 	return v
 }
 
-func (channel *DAMChannel) Enqueue(data datatypes.DAMType) {
-	channel.channel <- data
+func (channel *DAMChannel) Enqueue(element ChannelElement) {
+	channel.channel <- element
 }
 
 func (channel *DAMChannel) Full() bool {
@@ -59,7 +74,7 @@ func (channel *DAMChannel) Len() int {
 	return len(channel.channel)
 }
 
-type CommunicationChannel[T datatypes.DAMType] struct {
+type CommunicationChannel struct {
 	InputPort  Port
 	OutputPort Port
 
