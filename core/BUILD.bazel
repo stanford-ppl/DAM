@@ -15,5 +15,5 @@ go_library(
 go_test(
     name = "core_test",
     srcs = ["core_test.go"],
-    deps = [":core", "//datatypes:base", "//datatypes:fixed", "//networks:ideal_network"]
+    deps = [":core", "//datatypes:base", "//datatypes:fixed", "//networks:ideal_network", "//vector"]
 )

@@ -13,8 +13,8 @@ type Vector[T datatypes.DAMType] struct {
 
 }
 
-func NewVector[T datatypes.DAMType](width int) *Vector[T] {
-	return &Vector[T]{ data : make([]T , width) }
+func NewVector[T datatypes.DAMType](width int) Vector[T] {
+	return Vector[T]{ data : make([]T , width) }
 }
 
 func (v *Vector[T]) Width() int {
@@ -28,4 +28,8 @@ func (v *Vector[T]) Set(index int , value T) {
 
 func (v *Vector[T]) Get(index int) T {
 	return v.data[index]
+}
+
+func (v Vector[T]) Validate() bool {
+	return true
 }
