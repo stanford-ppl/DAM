@@ -97,6 +97,7 @@ func TestSimpleNodeIO(t *testing.T) {
 	go checker()
 
 	wg.Wait()
+	t.Logf("Total cycles elapsed: %s", node.tickCount.String())
 }
 
 func TestSimpleNodeIO_Vector(t *testing.T) {

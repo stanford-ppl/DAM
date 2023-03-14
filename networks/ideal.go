@@ -2,15 +2,14 @@ package networks
 
 import (
 	"github.com/stanford-ppl/DAM/core"
-	"github.com/stanford-ppl/DAM/datatypes"
 )
 
 // Stateless ideal network, which has a 1-cycle latency between enqueue and dequeue.
-type IdealNetwork[T datatypes.DAMType] struct {
-	Channels []core.CommunicationChannel[T]
+type IdealNetwork struct {
+	Channels []core.CommunicationChannel
 }
 
-func (ideal *IdealNetwork[T]) TickChannels() {
+func (ideal *IdealNetwork) TickChannels() {
 	for _, channel := range ideal.Channels {
 
 		if channel.InputChannel.Empty() || channel.OutputChannel.Full() {

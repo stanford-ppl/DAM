@@ -20,4 +20,5 @@ go_test(
         "//datatypes",
         "@org_golang_x_exp//maps",
     ],
+    size = "small"
 )
