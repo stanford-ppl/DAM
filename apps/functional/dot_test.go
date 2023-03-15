@@ -15,7 +15,7 @@ func Test_ideal_network(t *testing.T) {
 	
 	net := networks.IdealNetwork{}
 
-	var channelSize uint = 10
+	var channelSize uint = 5
 	fpt := datatypes.FixedPointType{true, 32, 0}
 	var wg sync.WaitGroup
 
@@ -106,9 +106,15 @@ func Test_ideal_network(t *testing.T) {
 		}
 	}
 
-	main := func() {
+	node0Ticker := func() {
 		for i := 0; i < 10; i++ {
 			node0.Tick()
+		}
+		wg.Done()
+	}
+
+	node1Ticker := func() {
+		for i := 0; i < 10; i++ {
 			node1.Tick()
 		}
 		wg.Done()
@@ -125,11 +131,12 @@ func Test_ideal_network(t *testing.T) {
 		wg.Done()
 	}
 
-	wg.Add(4)
+	wg.Add(5)
 
 	go genA()
 	go genB()
-	go main()
+	go node0Ticker()
+	go node1Ticker()
 	go networkTicker(quit)
 	go checker()
 	
