@@ -10,7 +10,8 @@ import (
 	"github.com/stanford-ppl/DAM/core"
 )
 
-func TestDotProduct(t *testing.T) {
+// TODO: This test should be in `core_test.go` but Bazel says it cannot find out where `ideal_network` package is.  Find out why this is the case.
+func Test_ideal_network(t *testing.T) {
 	
 	net := networks.IdealNetwork{}
 
