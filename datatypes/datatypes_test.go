@@ -34,6 +34,16 @@ func TestFixedPointIntRoundTrip(t *testing.T) {
 	}
 }
 
+func TestFixedPointNegInt(t *testing.T) {
+	fpt := FixedPointType{true, 4, 4}
+	fp := FixedPoint{Tp: fpt}
+	integer := big.NewInt(-3)
+	fp.SetInt(integer)
+	if fp.String() != "0b1101.0000" {
+		t.Errorf("Expected -3 to be 0b1101.0000, got %s", fp.String())
+	}
+}
+
 func TestFixedPointMin(t *testing.T) {
 	fpt := FixedPointType{true, 32, 0}
 	minimum := fpt.Min().ToInt()
@@ -83,5 +93,34 @@ func TestFixedPointValidatePass(t *testing.T) {
 	if !val.Validate() {
 		// This shouldn't validate!
 		t.Errorf("%s should have validated!", val)
+	}
+}
+
+func TestFixedPointAdd(t *testing.T) {
+	fpt := FixedPointType{true, 32, 32}
+	val1 := FixedPoint{Tp: fpt}
+	val1.SetInt(big.NewInt(-3))
+	val2 := FixedPoint{Tp: fpt}
+	val2.SetInt(big.NewInt(5))
+	val3 := FixedAdd(val1, val2)
+	if val3.ToInt().Int64() != 2 {
+		t.Errorf("Expected -3 + 5 = 2, got %s", val3.String())
+	}
+}
+
+func TestFixedPointMul(t *testing.T) {
+	fpt := FixedPointType{true, 8, 8}
+	val1 := FixedPoint{Tp: fpt}
+	val1.SetFloat(big.NewFloat(-3.5))
+	t.Logf("Bit pattern for -3.5: %s\n", val1.String())
+	t.Logf("Sign bit: %t", val1.Signbit())
+	val2 := FixedPoint{Tp: fpt}
+	val2.SetFloat(big.NewFloat(5))
+	t.Logf("Sign bit: %t", val2.Signbit())
+	val3 := FixedMulFull(val1, val2)
+	t.Logf("-3.5 * 5 = %s\n", val3.ToFloat().String())
+	flt, _ := val3.ToFloat().Float64()
+	if math.Abs(flt+17.5) > 0.0001 {
+		t.Errorf("Expected -3.5 * 5 = -17.5, got %s", val3.ToFloat().String())
 	}
 }
