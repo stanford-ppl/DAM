@@ -11,9 +11,8 @@ type IdealNetwork struct {
 
 func (ideal *IdealNetwork) TickChannels() {
 	for _, channel := range ideal.Channels {
-
 		if channel.InputChannel.Empty() || channel.OutputChannel.Full() {
-			return
+			continue
 		}
 		value := channel.InputChannel.Dequeue()
 		channel.OutputChannel.Enqueue(value)

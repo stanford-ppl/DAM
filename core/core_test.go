@@ -55,10 +55,10 @@ func TestSimpleNodeIO(t *testing.T) {
 		wg.Done()
 	}
 
-	node.Step = func(node *Node) {
+	node.Step = func(node *Node) *big.Int {
 		// Check if both channels are in the present
 		if !node.IsPresent(maps.Values(node.InputChannels)) {
-			return
+			return big.NewInt(1)
 		}
 
 		a := node.InputChannels[0].Channel.Dequeue().Data.(datatypes.FixedPoint)
@@ -66,6 +66,7 @@ func TestSimpleNodeIO(t *testing.T) {
 		c := datatypes.FixedAdd(a, b)
 		node.OutputChannels[0].Channel.Enqueue(MakeElement(&node.TickCount, c))
 		t.Logf("%d + %d = %d", a.ToInt().Int64(), b.ToInt().Int64(), c.ToInt().Int64())
+		return big.NewInt(1)
 	}
 
 	main := func() {
@@ -134,7 +135,7 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 		wg.Done()
 	}
 
-	node.Step = func(node *Node) {
+	node.Step = func(node *Node) *big.Int {
 		a := node.InputChannels[0].Channel.Dequeue().Data.(datatypes.Vector[datatypes.FixedPoint])
 
 		one := datatypes.FixedPoint{Tp: fpt}
@@ -144,6 +145,7 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 			a.Set(i, datatypes.FixedAdd(a.Get(i), one))
 		}
 		node.OutputChannels[0].Channel.Enqueue(MakeElement(&node.TickCount, a))
+		return big.NewInt(1)
 	}
 
 	main := func() {
@@ -164,7 +166,6 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 					if recv.Get(j).ToInt().Int64() != int64(j+1) {
 						t.Errorf("Expected: %d, received: %d", (j + 1), recv.Get(j).ToInt().Int64())
 					}
-
 				}
 			}
 		}
@@ -178,5 +179,4 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 	go checker()
 
 	wg.Wait()
-	
 }

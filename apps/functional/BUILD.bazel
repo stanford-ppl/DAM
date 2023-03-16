@@ -3,5 +3,5 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 go_test(
     name = "dot_test",
     srcs = ["dot_test.go"],
-    deps = ["//datatypes", "//networks:ideal_network", "//core"]
+    deps = ["//datatypes", "//networks:networks", "//core"]
 )

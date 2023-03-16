@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"math/big"
+
 	"github.com/stanford-ppl/DAM/datatypes"
 )
 
@@ -30,7 +31,7 @@ type Node struct {
 
 	State interface{}
 
-	Step func(node *Node)
+	Step func(node *Node) *big.Int
 }
 
 func NewNode() Node {
@@ -133,7 +134,7 @@ func (node *Node) Tick() {
 	if !canRun {
 		return
 	}
-	node.Step(node)
+	ticks := node.Step(node)
 
 	// Publish new data out
 	for id, outputTag := range node.OutputTags {
@@ -145,7 +146,7 @@ func (node *Node) Tick() {
 			targetChannel.Enqueue(MakeElement(&node.TickCount, publishData))
 		}
 	}
-	node.TickCount.Add(&node.TickCount, big.NewInt(1))
+	node.TickCount.Add(&node.TickCount, ticks)
 }
 
 func (node Node) IsPresent(checkedChannels []NodeInputChannel) bool {
