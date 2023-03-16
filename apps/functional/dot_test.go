@@ -16,7 +16,7 @@ func Test_ideal_network(t *testing.T) {
 	net := networks.IdealNetwork{}
 
 	var channelSize uint = 5
-	fpt := datatypes.FixedPointType{true, 32, 0}
+	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
 	var wg sync.WaitGroup
 
 	inputChannelA := core.NodeInputChannel{Channel: core.MakeChannel[datatypes.FixedPoint](channelSize)}
@@ -151,7 +151,7 @@ func Test_ideal_network_2(t *testing.T) {
 	net := networks.IdealNetwork{}
 
 	var channelSize uint = 10
-	fpt := datatypes.FixedPointType{true, 32, 0}
+	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
 	var wg sync.WaitGroup
 
 	inputChannelA := core.NodeInputChannel{Channel: core.MakeChannel[datatypes.FixedPoint](channelSize)}
