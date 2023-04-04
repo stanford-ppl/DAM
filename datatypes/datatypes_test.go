@@ -50,13 +50,13 @@ func TestFixedPointMin(t *testing.T) {
 	reference := big.NewInt(math.MinInt32)
 	minimum.Sub(minimum, reference)
 	if minimum.Int64() > 0 {
-		t.Errorf("I32 Min was incorrect: got error of: %d", minimum.Int64())
+		t.Errorf("I32 Min was incorrect: got error of: %d (%d, %d)", minimum.Int64(), math.MinInt32, fpt.Min().ToInt())
 	}
 }
 
 func TestFixedPointMax(t *testing.T) {
 	fpt := FixedPointType{true, 32, 0}
-	max := fpt.Min().ToInt()
+	max := fpt.Max().ToInt()
 	reference := big.NewInt(math.MaxInt32)
 	max.Sub(max, reference)
 	if max.Int64() > 0 {

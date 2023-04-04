@@ -35,9 +35,7 @@ func (fmt FixedPointType) Min() *FixedPoint {
 	if fmt.Signed {
 		// The minimum is -(1 << Integer)
 		tmp := big.NewInt(1)
-		tmp.Lsh(tmp, fmt.Integer)
-		tmp.Rsh(tmp, 1)
-		tmp.Neg(tmp)
+		tmp.Lsh(tmp, fmt.Integer+fmt.Fraction-1)
 		result.SetInt(tmp)
 	} else {
 		result.Underlying.SetInt64(0)
@@ -141,9 +139,18 @@ func (fp FixedPoint) ToFloat() *big.Float {
 }
 
 func (fp FixedPoint) ToInt() *big.Int {
-	result := new(big.Int)
-	result.Rsh(&fp.Underlying, fp.Tp.Fraction)
-	return result
+	if fp.Signbit() {
+		cpy := fp.Copy()
+		cpy.NegInPlace()
+		result := new(big.Int)
+		result.Rsh(&cpy.Underlying, fp.Tp.Fraction)
+		result.Neg(result)
+		return result
+	} else {
+		result := new(big.Int)
+		result.Rsh(&fp.Underlying, fp.Tp.Fraction)
+		return result
+	}
 }
 
 func (fp FixedPoint) String() string {
