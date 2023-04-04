@@ -49,6 +49,7 @@ func TestFixedPointMin(t *testing.T) {
 	minimum := fpt.Min().ToInt()
 	reference := big.NewInt(math.MinInt32)
 	minimum.Sub(minimum, reference)
+	t.Logf("Minimum for %s is %s", fpt, fpt.Min())
 	if minimum.Int64() > 0 {
 		t.Errorf("I32 Min was incorrect: got error of: %d (%d, %d)", minimum.Int64(), math.MinInt32, fpt.Min().ToInt())
 	}
@@ -91,7 +92,7 @@ func TestFixedPointValidatePass(t *testing.T) {
 	val := FixedPoint{Tp: fpt}
 	val.SetInt(big.NewInt(1 << 30))
 	if !val.Validate() {
-		// This shouldn't validate!
+		// This should validate!
 		t.Errorf("%s should have validated!", val)
 	}
 }

@@ -29,14 +29,14 @@ func (fpt FixedPointType) Validate() bool {
 	return true
 }
 
-func (fmt FixedPointType) Min() *FixedPoint {
+func (fpt FixedPointType) Min() *FixedPoint {
 	result := new(FixedPoint)
-	result.Tp = fmt
-	if fmt.Signed {
+	result.Tp = fpt
+	if fpt.Signed {
 		// The minimum is -(1 << Integer)
 		tmp := big.NewInt(1)
-		tmp.Lsh(tmp, fmt.Integer+fmt.Fraction-1)
-		result.SetInt(tmp)
+		tmp.Lsh(tmp, fpt.Integer+fpt.Fraction-1)
+		result.Underlying.Set(tmp)
 	} else {
 		result.Underlying.SetInt64(0)
 	}
@@ -63,13 +63,23 @@ type FixedPoint struct {
 func (fp FixedPoint) Validate() bool {
 	min := fp.Tp.Min()
 	if Cmp(fp, *min) < 0 {
+		fmt.Printf("%s < %s", fp, min)
 		return false
 	}
 	max := fp.Tp.Max()
 	if Cmp(fp, *max) > 0 {
+		fmt.Printf("%s > %s", fp, max)
 		return false
 	}
 	return true
+}
+
+func (fp FixedPoint) Size() *big.Int {
+	return big.NewInt(int64(fp.Tp.NBits()))
+}
+
+func (fp FixedPoint) Payload() any {
+	return fp
 }
 
 func (fp *FixedPoint) NegInPlace() {

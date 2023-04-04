@@ -1,11 +1,23 @@
 package datatypes
 
+import "math/big"
+
 // TODO:  Does golang support another generic param to set length of array
 // that way, we can embed a static-sized array in the struct itself without having
 // to call `NewVector`
 type Vector[T DAMType] struct {
 	data []T
 }
+
+func (vector Vector[T]) Size() *big.Int {
+	result := big.NewInt(0)
+	for _, v := range vector.data {
+		result.Add(result, v.Size())
+	}
+	return result
+}
+
+func (vector Vector[T]) Payload() any { return vector }
 
 func NewVector[T DAMType](width int) Vector[T] {
 	return Vector[T]{data: make([]T, width)}

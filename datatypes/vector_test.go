@@ -14,21 +14,21 @@ func TestNewVector(t *testing.T) {
 }
 
 func TestGetAndSet(t *testing.T) {
-	v := NewVector[FixedPointType](5)
+	v := NewVector[FixedPoint](5)
 
-	v.Set(0, FixedPointType{false, 3, 13})
-	v.Set(1, FixedPointType{true, 1, 21})
+	v.Set(0, FixedPoint{Tp: FixedPointType{false, 3, 13}})
+	v.Set(1, FixedPoint{Tp: FixedPointType{true, 1, 21}})
 
-	var elem0 FixedPointType = v.Get(0)
-	var elem1 FixedPointType = v.Get(1)
+	elem0 := v.Get(0)
+	elem1 := v.Get(1)
 
-	if elem0.Signed != false || elem0.Integer != 3 || elem0.Fraction != 13 {
+	if elem0.Tp.Signed != false || elem0.Tp.Integer != 3 || elem0.Tp.Fraction != 13 {
 		t.Errorf("Fail:  Vector Element at index 0 != Element set at index 0")
 	} else {
 		t.Logf("Pass")
 	}
 
-	if elem1.Signed != true || elem1.Integer != 1 || elem1.Fraction != 21 {
+	if elem1.Tp.Signed != true || elem1.Tp.Integer != 1 || elem1.Tp.Fraction != 21 {
 		t.Errorf("Fail:  Vector Element at index 1 != Element set at index 1")
 	} else {
 		t.Logf("Pass")
