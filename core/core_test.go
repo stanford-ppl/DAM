@@ -27,7 +27,7 @@ func TestSimpleNodeIO(t *testing.T) {
 		t.Errorf("Node %d failed validation", node.ID)
 	}
 
-	fpt := datatypes.FixedPointType{true, 32, 0}
+	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
 
 	var wg sync.WaitGroup
 	genA := func() {
@@ -118,7 +118,7 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 		t.Errorf("Node %d failed validation", node.ID)
 	}
 
-	fpt := datatypes.FixedPointType{true, 32, 0}
+	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
 
 	var wg sync.WaitGroup
 

@@ -136,6 +136,9 @@ func (node *Node) Tick() {
 	}
 	ticks := node.Step(node)
 
+	// Add ticks before publishing
+	node.TickCount.Add(&node.TickCount, ticks)
+
 	// Publish new data out
 	for id, outputTag := range node.OutputTags {
 		// Check if we want to publish
@@ -146,7 +149,6 @@ func (node *Node) Tick() {
 			targetChannel.Enqueue(MakeElement(&node.TickCount, publishData))
 		}
 	}
-	node.TickCount.Add(&node.TickCount, ticks)
 }
 
 func (node Node) IsPresent(checkedChannels []NodeInputChannel) bool {
