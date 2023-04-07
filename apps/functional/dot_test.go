@@ -66,7 +66,7 @@ func Test_ideal_network(t *testing.T) {
 		return big.NewInt(1)
 	}
 
-	comchan1 := core.CommunicationChannel{InputChannel: *(outputChannel0.Channel), OutputChannel: *(inputChannelC.Channel)}
+	comchan1 := core.CommunicationChannel{OutputChannel: *(outputChannel0.Channel), InputChannel: *(inputChannelC.Channel)}
 	networkChannels := []core.CommunicationChannel{comchan1}
 	net.Channels = networkChannels
 
@@ -205,8 +205,8 @@ func Test_ideal_network_2(t *testing.T) {
 		return big.NewInt(1)
 	}
 
-	comchan1 := core.CommunicationChannel{InputChannel: *(outputChannel0.Channel), OutputChannel: *(inputChannelC.Channel)}
-	comchan2 := core.CommunicationChannel{InputChannel: *(outputChannel1.Channel), OutputChannel: *(inputChannelD.Channel)}
+	comchan1 := core.CommunicationChannel{OutputChannel: *(outputChannel0.Channel), InputChannel: *(inputChannelC.Channel)}
+	comchan2 := core.CommunicationChannel{OutputChannel: *(outputChannel1.Channel), InputChannel: *(inputChannelD.Channel)}
 	networkChannels := []core.CommunicationChannel{comchan1, comchan2}
 	net.Channels = networkChannels
 

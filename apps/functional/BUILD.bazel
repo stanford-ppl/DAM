@@ -12,10 +12,14 @@ go_test(
 
 go_test(
     name = "functional_test",
-    srcs = ["dot_test.go"],
+    srcs = [
+        "dot_test.go",
+        "gemv_test.go",
+    ],
     deps = [
         "//core",
         "//datatypes",
         "//networks",
+        "//utils",
     ],
 )

@@ -18,6 +18,12 @@ type NodeOutputChannel struct {
 	Channel *DAMChannel
 }
 
+func MakeInputOutputChannelPair[T datatypes.DAMType](size uint) (input NodeInputChannel, output NodeOutputChannel) {
+	input = NodeInputChannel{Channel: MakeChannel[T](size)}
+	output = NodeOutputChannel{Channel: MakeChannel[T](size)}
+	return
+}
+
 type Node struct {
 	ID        int
 	TickCount big.Int
@@ -118,7 +124,7 @@ func (node *Node) CanRun() *big.Int {
 		peeked := inputChannel.Channel.Peek()
 
 		// If the update is in the future, then we need to wait for that update to come through.
-		utils.Max[*big.Int](nextRun, &(peeked.Time), nextRun)
+		utils.Max[*big.Int](nextRun, &peeked.Time, nextRun)
 
 		// If we can't run after the update, then we need to wait at least one iteration and try again.
 		if !node.InputTags[id].Updater.CanRun(peeked.Data) {

@@ -1,6 +1,8 @@
 package networks
 
 import (
+	"fmt"
+
 	"github.com/stanford-ppl/DAM/core"
 )
 
@@ -11,11 +13,12 @@ type IdealNetwork struct {
 
 func (ideal *IdealNetwork) TickChannels() {
 	for _, channel := range ideal.Channels {
-		if channel.InputChannel.Empty() || channel.OutputChannel.Full() {
+		if channel.OutputChannel.Empty() || channel.InputChannel.Full() {
 			continue
 		}
-		value := channel.InputChannel.Dequeue()
-		channel.OutputChannel.Enqueue(value)
+		value := channel.OutputChannel.Dequeue()
+		fmt.Printf("Passing on packet: %d\n", value.Time.Int64())
+		channel.InputChannel.Enqueue(value)
 
 	}
 }

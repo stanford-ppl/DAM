@@ -249,7 +249,7 @@ func FixedMulFull(a, b FixedPoint) FixedPoint {
 	return result
 }
 
-func (fix *FixedPoint) FixedToFixed(newTp FixedPointType) FixedPoint {
+func (fix FixedPoint) FixedToFixed(newTp FixedPointType) FixedPoint {
 	result := FixedPoint{
 		Tp: newTp,
 	}
