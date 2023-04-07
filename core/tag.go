@@ -6,7 +6,7 @@ type TagType[D any, U any] struct {
 
 type InputTagUpdater[D any, U any] interface {
 	CanRun(update U) bool
-	Update(state D, update U, enabled bool) D
+	Update(state D, updates []U, enabled bool) D
 }
 
 type InputTag[D any, U any] struct {

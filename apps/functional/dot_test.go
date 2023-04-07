@@ -33,7 +33,7 @@ func Test_ideal_network(t *testing.T) {
 		t.Errorf("Node %d failed validation", node0.ID)
 	}
 
-	node0.Step = func(node *core.Node) *big.Int {
+	node0.Step = func(node *core.Node, _ *big.Int) *big.Int {
 		a := node.InputChannels[0].Channel.Dequeue().Data.(datatypes.FixedPoint)
 		b := node.InputChannels[1].Channel.Dequeue().Data.(datatypes.FixedPoint)
 		c := datatypes.FixedAdd(a, b)
@@ -56,7 +56,7 @@ func Test_ideal_network(t *testing.T) {
 		t.Errorf("Node %d failed validation", node1.ID)
 	}
 
-	node1.Step = func(node *core.Node) *big.Int {
+	node1.Step = func(node *core.Node, _ *big.Int) *big.Int {
 		a := node.InputChannels[0].Channel.Dequeue().Data.(datatypes.FixedPoint)
 		one := datatypes.FixedPoint{Tp: fpt}
 		one.SetInt(big.NewInt(int64(1)))
@@ -170,7 +170,7 @@ func Test_ideal_network_2(t *testing.T) {
 		t.Errorf("Node %d failed validation", node0.ID)
 	}
 
-	node0.Step = func(node *core.Node) *big.Int {
+	node0.Step = func(node *core.Node, _ *big.Int) *big.Int {
 		a := node.InputChannels[0].Channel.Dequeue().Data.(datatypes.FixedPoint)
 		b := node.InputChannels[1].Channel.Dequeue().Data.(datatypes.FixedPoint)
 		c := datatypes.FixedAdd(a, b)
@@ -195,7 +195,7 @@ func Test_ideal_network_2(t *testing.T) {
 		t.Errorf("Node %d failed validation", node1.ID)
 	}
 
-	node1.Step = func(node *core.Node) *big.Int {
+	node1.Step = func(node *core.Node, _ *big.Int) *big.Int {
 		a := node.InputChannels[0].Channel.Dequeue().Data.(datatypes.FixedPoint)
 		one := datatypes.FixedPoint{Tp: fpt}
 		one.SetInt(big.NewInt(int64(1)))

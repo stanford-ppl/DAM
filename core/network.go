@@ -67,11 +67,15 @@ func (channel *DAMChannel) Cap() int {
 }
 
 func (channel *DAMChannel) Empty() bool {
-	return len(channel.channel) == 0
+	return (len(channel.channel) == 0 && channel.head == nil)
 }
 
 func (channel *DAMChannel) Len() int {
-	return len(channel.channel)
+	cur := len(channel.channel)
+	if channel.head != nil {
+		cur += 1
+	}
+	return cur
 }
 
 type CommunicationChannel struct {

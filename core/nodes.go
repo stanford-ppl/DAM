@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/stanford-ppl/DAM/datatypes"
+	"github.com/stanford-ppl/DAM/utils"
 )
 
 type NodeInputChannel struct {
@@ -31,7 +32,7 @@ type Node struct {
 
 	State interface{}
 
-	Step func(node *Node) *big.Int
+	Step func(node *Node, ffTime *big.Int) *big.Int
 }
 
 func NewNode() Node {
@@ -100,55 +101,79 @@ func (node *Node) Validate() bool {
 	return true
 }
 
-func (node *Node) CanRun() bool {
+func (node *Node) CanRun() *big.Int {
+	// Number of cycles we need to skip forward before we can maybe run
+	nextRun := big.NewInt(0)
 	for id := range node.InputTags {
 		inputChannel := node.InputChannels[id]
-		peeked := inputChannel.Channel.Peek()
-		if peeked.Time.Cmp(&node.TickCount) > 0 {
-			return false
+		updater := node.InputTags[id].Updater
+
+		// If a tag can run without any new update, then we don't need to check for updates
+		if updater.CanRun(nil) {
+			continue
 		}
+
+		// If the tag can't run without a new update, then we have to
+		// wait for an update.
+		peeked := inputChannel.Channel.Peek()
+
+		// If the update is in the future, then we need to wait for that update to come through.
+		utils.Max[*big.Int](nextRun, &(peeked.Time), nextRun)
+
+		// If we can't run after the update, then we need to wait at least one iteration and try again.
 		if !node.InputTags[id].Updater.CanRun(peeked.Data) {
-			return false
+			utils.Max[*big.Int](nextRun, big.NewInt(1), nextRun)
 		}
 	}
-	return true
+	return nextRun
 }
 
-func (node *Node) UpdateTagData(enabled bool) {
+func (node *Node) UpdateTagData(ffTime *big.Int) {
+	// fast forward to ffTime
+	newTime := new(big.Int)
+	newTime.Add(ffTime, &node.TickCount)
+
+	enabled := ffTime.Cmp(big.NewInt(0)) == 0
+
 	for id, inTag := range node.InputTags {
 		inputChannel := node.InputChannels[id]
-		dequeued := inputChannel.Channel.Dequeue()
-		if node.TickCount.Cmp(&dequeued.Time) < 0 {
-			panic(fmt.Sprintf("Ended up in future! Reading data at %s when we're at %s", dequeued.Time.String(), node.TickCount.String()))
+		// to fast forward to FFTime:
+		// First, we need to fetch all of the updates up to FFTime.
+		// If we don't have a new update at/after FFTime, then we have to stall because we don't know if the other node just hasn't been scheduled.
+		var data []datatypes.DAMType
+		for {
+			newData := inputChannel.Channel.Peek()
+			if newData.Time.Cmp(newTime) > 0 {
+				// If this update is in the future, then we know we've collected all relevant updates
+				break
+			}
+			// otherwise, we pop the data
+			inputChannel.Channel.Dequeue()
+			data = append(data, newData.Data)
 		}
-		inTag.State = inTag.Updater.Update(inTag.State, dequeued.Data, enabled)
+		inTag.State = inTag.Updater.Update(inTag.State, data, enabled)
 	}
 }
 
 func (node *Node) Tick() {
-	// Check to see if we can run
-	canRun := node.CanRun()
-	// Update all the tags for the node
-	node.UpdateTagData(canRun)
+	// Check to see if/when we can check/step again.
+	ffTime := node.CanRun()
+	// ffTime dictates "when" our next run can be.
+	// if ffTime > 0, that means we need to fast-forward first.
 
-	if !canRun {
-		return
+	// Update all the tags for the node for ffTime cycles
+	node.UpdateTagData(ffTime)
+
+	// Need to step even if "canRun" is false because we could have a pipeline.
+	// ffTime = 0 means that we're not fast forwarding at all.
+	// Step is now also responsible for publishing data to tags, so that it has finer grained control.
+	ticks := node.Step(node, ffTime)
+
+	// we need to tick at least ffTime steps forward
+	if ticks.Cmp(ffTime) < 0 {
+		panic(fmt.Sprintf("Needed to skip forward %s cycles, but only ticked %s cycles", ffTime.String(), ticks.String()))
 	}
-	ticks := node.Step(node)
-
-	// Add ticks before publishing
 	node.TickCount.Add(&node.TickCount, ticks)
-
-	// Publish new data out
-	for id, outputTag := range node.OutputTags {
-		// Check if we want to publish
-		willPublish := outputTag.Publisher.HasPublish(node.State)
-		if willPublish {
-			publishData := outputTag.Publisher.Publish(node.State)
-			targetChannel := node.OutputChannels[id].Channel
-			targetChannel.Enqueue(MakeElement(&node.TickCount, publishData))
-		}
-	}
 }
 
 func (node Node) IsPresent(checkedChannels []NodeInputChannel) bool {

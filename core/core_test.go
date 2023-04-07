@@ -55,7 +55,7 @@ func TestSimpleNodeIO(t *testing.T) {
 		wg.Done()
 	}
 
-	node.Step = func(node *Node) *big.Int {
+	node.Step = func(node *Node, _ *big.Int) *big.Int {
 		// Check if both channels are in the present
 		if !node.IsPresent(maps.Values(node.InputChannels)) {
 			return big.NewInt(1)
@@ -135,7 +135,7 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 		wg.Done()
 	}
 
-	node.Step = func(node *Node) *big.Int {
+	node.Step = func(node *Node, _ *big.Int) *big.Int {
 		a := node.InputChannels[0].Channel.Dequeue().Data.(datatypes.Vector[datatypes.FixedPoint])
 
 		one := datatypes.FixedPoint{Tp: fpt}
