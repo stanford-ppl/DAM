@@ -3,10 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "datatypes",
     srcs = [
+        "abstract_types.go",
         "base.go",
         "fixed.go",
         "vector.go",
-        "abstract_types.go",
     ],
     importpath = "github.com/stanford-ppl/DAM/datatypes",
     visibility = ["//visibility:public"],

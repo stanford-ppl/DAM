@@ -3,5 +3,19 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 go_test(
     name = "dot_test",
     srcs = ["dot_test.go"],
-    deps = ["//datatypes", "//networks:networks", "//core"]
+    deps = [
+        "//core",
+        "//datatypes",
+        "//networks",
+    ],
+)
+
+go_test(
+    name = "functional_test",
+    srcs = ["dot_test.go"],
+    deps = [
+        "//core",
+        "//datatypes",
+        "//networks",
+    ],
 )

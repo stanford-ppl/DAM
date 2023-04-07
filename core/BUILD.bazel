@@ -9,16 +9,19 @@ go_library(
     ],
     importpath = "github.com/stanford-ppl/DAM/core",
     visibility = ["//visibility:public"],
-    deps = ["//datatypes", "//utils"],
+    deps = [
+        "//datatypes",
+        "//utils",
+    ],
 )
 
 go_test(
     name = "core_test",
+    size = "small",
     srcs = ["core_test.go"],
     embed = [":core"],
     deps = [
         "//datatypes",
         "@org_golang_x_exp//maps",
     ],
-    size = "small"
 )
