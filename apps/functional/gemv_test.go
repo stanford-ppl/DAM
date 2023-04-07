@@ -56,7 +56,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 		result := datatypes.NewVector[datatypes.FixedPoint](N)
 		for i := 0; i < N; i++ {
 			val := datatypes.FixedPoint{Tp: fpt}
-			val.SetInt(big.NewInt(int64(i)))
+			val.SetInt(big.NewInt(int64(i + node.State.(int))))
 			result.Set(i, val)
 		}
 		node.OutputChannels[0].Channel.Enqueue(core.MakeElement(&node.TickCount, result))
@@ -142,6 +142,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 	// Ticks the matrix producer
 	go (func() {
 		for i := 0; i < M; i++ {
+			matProducer.State = M
 			t.Logf("Ticking Matrix Producer %d", i)
 			matProducer.Tick()
 		}
