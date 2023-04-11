@@ -31,4 +31,5 @@
     "go.buildOnSave": "workspace",
     "go.lintOnSave": "off",
     "go.vetOnSave": "off",
+    "go.testFlags": ["-v"],
   }

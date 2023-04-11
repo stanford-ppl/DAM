@@ -231,7 +231,6 @@ func FixedMulFull(a, b FixedPoint) FixedPoint {
 	if bSign {
 		bCpy.NegInPlace()
 	}
-	fmt.Printf("Multiplying: %s %s\n", aCpy.String(), bCpy.String())
 	nInt := a.Tp.Integer + b.Tp.Integer
 	if a.Tp.Signed && b.Tp.Signed {
 		nInt -= 1
@@ -242,7 +241,6 @@ func FixedMulFull(a, b FixedPoint) FixedPoint {
 		Fraction: a.Tp.Fraction + b.Tp.Fraction,
 	}}
 	result.Underlying.Mul(&aCpy.Underlying, &bCpy.Underlying)
-	fmt.Printf("Result: %s\n", result.String())
 	if aSign != bSign {
 		result.NegInPlace()
 	}

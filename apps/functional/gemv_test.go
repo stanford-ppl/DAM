@@ -21,7 +21,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 	// Assume that it takes log2(vecSize) + 1 time to run a dot product
 	dotTime := int(math.Log2(float64(N))) + 1
 
-	fpt := datatypes.FixedPointType{Signed: true, Integer: 16, Fraction: 0}
+	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
 
 	channelSize := uint(8)
 
