@@ -12,7 +12,7 @@ import (
 	"github.com/stanford-ppl/DAM/utils"
 )
 
-// This test runs a Matrix-Vector (M x N) x (N) product followed by a RELU
+// This test runs a Matrix-Vector (M x N) x (N) product
 // This assumes a black-box dot product operation capable of doing a N-element dot product.
 func TestNetworkWithBigStep(t *testing.T) {
 	M := 1024
