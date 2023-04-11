@@ -57,6 +57,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 		for i := 0; i < N; i++ {
 			val := datatypes.FixedPoint{Tp: fpt}
 			val.SetInt(big.NewInt(int64(i + node.State.(int))))
+			t.Logf("Mat[%d, %d] = %d", node.State.(int), i, val.ToInt().Int64())
 			result.Set(i, val)
 		}
 		node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, result))
@@ -130,7 +131,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 	// Ticks the matrix producer
 	go (func() {
 		for i := 0; i < M; i++ {
-			matProducer.State = M
+			matProducer.State = i
 			matProducer.Tick()
 		}
 		wg.Done()
@@ -149,7 +150,15 @@ func TestNetworkWithBigStep(t *testing.T) {
 	go (func() {
 		for i := 0; i < M; i++ {
 			recv := dotOutput.InputChannel.Dequeue()
-			t.Logf("Received value: %d at time %d", recv.Data.(datatypes.FixedPoint).ToInt().Int64(), recv.Time.Int64())
+			recvVal := recv.Data.(datatypes.FixedPoint).ToInt().Int64()
+			// The reference value for element i is Sum(a * (a + i) for a in range(N))
+			var refVal int = 0
+			for tmp := 0; tmp < N; tmp++ {
+				refVal += tmp * (tmp + i)
+			}
+			if recvVal != int64(refVal) {
+				t.Errorf("Error at element %d, %d != %d", i, recvVal, refVal)
+			}
 		}
 		finished <- true
 		wg.Done()
