@@ -131,7 +131,6 @@ func TestNetworkWithBigStep(t *testing.T) {
 	go (func() {
 		for i := 0; i < M; i++ {
 			matProducer.State = M
-			t.Logf("Ticking Matrix Producer %d", i)
 			matProducer.Tick()
 		}
 		wg.Done()
@@ -140,7 +139,6 @@ func TestNetworkWithBigStep(t *testing.T) {
 	// Ticks the dot product
 	go (func() {
 		for i := 0; i < M; i++ {
-			t.Logf("Ticking Dot Product %d", i)
 			dotProduct.Tick()
 		}
 		wg.Done()
@@ -160,8 +158,6 @@ func TestNetworkWithBigStep(t *testing.T) {
 	go (func() {
 		// This ticks the network until we're done
 		for {
-
-			t.Log("Ticking Network")
 			select {
 			case <-finished:
 				wg.Done()
