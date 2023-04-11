@@ -1,8 +1,6 @@
 package networks
 
 import (
-	"fmt"
-
 	"github.com/stanford-ppl/DAM/core"
 )
 
@@ -17,7 +15,6 @@ func (ideal *IdealNetwork) TickChannels() {
 			continue
 		}
 		value := channel.OutputChannel.Dequeue()
-		fmt.Printf("Passing on packet: %d\n", value.Time.Int64())
 		channel.InputChannel.Enqueue(value)
 
 	}

@@ -58,19 +58,19 @@ func (channel *DAMChannel) Enqueue(element ChannelElement) {
 	channel.channel <- element
 }
 
-func (channel *DAMChannel) Full() bool {
+func (channel DAMChannel) Full() bool {
 	return len(channel.channel) == cap(channel.channel)
 }
 
-func (channel *DAMChannel) Cap() int {
+func (channel DAMChannel) Cap() int {
 	return cap(channel.channel)
 }
 
-func (channel *DAMChannel) Empty() bool {
+func (channel DAMChannel) Empty() bool {
 	return (len(channel.channel) == 0 && channel.head == nil)
 }
 
-func (channel *DAMChannel) Len() int {
+func (channel DAMChannel) Len() int {
 	cur := len(channel.channel)
 	if channel.head != nil {
 		cur += 1
@@ -83,8 +83,15 @@ type CommunicationChannel struct {
 	OutputPort Port
 
 	// Serves as the input 'buffer' of a DAM Node
-	InputChannel DAMChannel
+	InputChannel *DAMChannel
 
 	// Serves as the output 'buffer' of a DAM Node
-	OutputChannel DAMChannel
+	OutputChannel *DAMChannel
+}
+
+func MakeCommunicationChannel[T datatypes.DAMType](size uint) CommunicationChannel {
+	return CommunicationChannel{
+		InputChannel:  MakeChannel[T](size),
+		OutputChannel: MakeChannel[T](size),
+	}
 }

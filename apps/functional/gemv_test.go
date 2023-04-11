@@ -27,19 +27,19 @@ func TestNetworkWithBigStep(t *testing.T) {
 
 	// We have three nodes -- a matrix producer, a vector producer, and a dot product unit.
 
-	matToDotIn, matToDotOut := core.MakeInputOutputChannelPair[datatypes.Vector[datatypes.FixedPoint]](channelSize)
-	vecToDotIn, vecToDotOut := core.MakeInputOutputChannelPair[datatypes.Vector[datatypes.FixedPoint]](channelSize)
-	dotOutput := core.NodeOutputChannel{Channel: core.MakeChannel[datatypes.FixedPoint](uint(M))}
+	matToDot := core.MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](channelSize)
+	vecToDot := core.MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](channelSize)
+	dotOutput := core.MakeCommunicationChannel[datatypes.FixedPoint](uint(M))
 
 	network := networks.IdealNetwork{}
 
 	vecProducer := core.NewNode()
 	vecProducer.SetID(0)
-	vecProducer.SetOutputChannel(0, vecToDotOut)
+	vecProducer.SetOutputChannel(0, vecToDot)
 
 	matProducer := core.NewNode()
 	matProducer.SetID(1)
-	matProducer.SetOutputChannel(0, matToDotOut)
+	matProducer.SetOutputChannel(0, matToDot)
 
 	vecProducer.Step = func(node *core.Node, _ *big.Int) *big.Int {
 		result := datatypes.NewVector[datatypes.FixedPoint](N)
@@ -48,7 +48,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 			val.SetInt(big.NewInt(int64(i)))
 			result.Set(i, val)
 		}
-		node.OutputChannels[0].Channel.Enqueue(core.MakeElement(&node.TickCount, result))
+		node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, result))
 		return big.NewInt(1)
 	}
 
@@ -59,29 +59,17 @@ func TestNetworkWithBigStep(t *testing.T) {
 			val.SetInt(big.NewInt(int64(i + node.State.(int))))
 			result.Set(i, val)
 		}
-		node.OutputChannels[0].Channel.Enqueue(core.MakeElement(&node.TickCount, result))
+		node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, result))
 		return big.NewInt(int64(timePerVecInMatrix))
 	}
 
 	dotProduct := core.NewNode()
 	dotProduct.SetID(2)
-	dotProduct.SetInputChannel(0, matToDotIn)
-	dotProduct.SetInputChannel(1, vecToDotIn)
+	dotProduct.SetInputChannel(0, matToDot)
+	dotProduct.SetInputChannel(1, vecToDot)
 	dotProduct.SetOutputChannel(0, dotOutput)
 
-	network.Channels = append(network.Channels, core.CommunicationChannel{
-		InputPort:     matToDotIn.Port,
-		OutputPort:    matToDotOut.Port,
-		InputChannel:  *matToDotIn.Channel,
-		OutputChannel: *matToDotOut.Channel,
-	})
-
-	network.Channels = append(network.Channels, core.CommunicationChannel{
-		InputPort:     vecToDotIn.Port,
-		OutputPort:    vecToDotOut.Port,
-		InputChannel:  *vecToDotIn.Channel,
-		OutputChannel: *vecToDotOut.Channel,
-	})
+	network.Channels = []core.CommunicationChannel{matToDot, vecToDot, dotOutput}
 
 	// The state is whether we've read yet.
 	type MatVecState struct {
@@ -104,13 +92,13 @@ func TestNetworkWithBigStep(t *testing.T) {
 			t.Log("Initializing Vector")
 			state.HasInitialized = true
 			timeDelta := new(big.Int)
-			vec := vecChannel.Channel.Dequeue()
+			vec := vecChannel.Dequeue()
 			chanTime := vec.Time
 			state.Vector = vec.Data.(datatypes.Vector[datatypes.FixedPoint])
 			timeDelta.Sub(&chanTime, &node.TickCount)
 			utils.Max[*big.Int](timeDelta, tick, tick)
 		}
-		matInput := matChannel.Channel.Dequeue()
+		matInput := matChannel.Dequeue()
 		timeDelta := new(big.Int)
 		timeDelta.Sub(&matInput.Time, &node.TickCount)
 		utils.Max[*big.Int](timeDelta, tick, tick)
@@ -130,7 +118,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 		outputTime := big.NewInt(int64(dotTime))
 		outputTime.Add(&node.TickCount, tick)
 		t.Logf("Enqueuing result %d (simulated time %d)", sum.ToInt().Int64(), outputTime.Int64())
-		dotOutput.Channel.Enqueue(core.MakeElement(outputTime, sum))
+		node.OutputChannels[0].Enqueue(core.MakeElement(outputTime, sum))
 		return
 	}
 
@@ -162,7 +150,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 	finished := make(chan bool)
 	go (func() {
 		for i := 0; i < M; i++ {
-			recv := dotOutput.Channel.Dequeue()
+			recv := dotOutput.InputChannel.Dequeue()
 			t.Logf("Received value: %d at time %d", recv.Data.(datatypes.FixedPoint).ToInt().Int64(), recv.Time.Int64())
 		}
 		finished <- true

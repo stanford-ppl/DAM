@@ -8,29 +8,13 @@ import (
 	"github.com/stanford-ppl/DAM/utils"
 )
 
-type NodeInputChannel struct {
-	Port    Port
-	Channel *DAMChannel
-}
-
-type NodeOutputChannel struct {
-	Port    Port
-	Channel *DAMChannel
-}
-
-func MakeInputOutputChannelPair[T datatypes.DAMType](size uint) (input NodeInputChannel, output NodeOutputChannel) {
-	input = NodeInputChannel{Channel: MakeChannel[T](size)}
-	output = NodeOutputChannel{Channel: MakeChannel[T](size)}
-	return
-}
-
 type Node struct {
 	ID        int
 	TickCount big.Int
 
 	// maps port number to Input Channels
-	InputChannels  map[int]NodeInputChannel
-	OutputChannels map[int]NodeOutputChannel
+	InputChannels  map[int]*DAMChannel
+	OutputChannels map[int]*DAMChannel
 
 	// Maps port number to the Tag
 	InputTags  map[int]InputTag[datatypes.DAMType, datatypes.DAMType]
@@ -44,8 +28,8 @@ type Node struct {
 func NewNode() Node {
 	n := Node{}
 	n.ID = -1
-	n.InputChannels = map[int]NodeInputChannel{}
-	n.OutputChannels = map[int]NodeOutputChannel{}
+	n.InputChannels = map[int]*DAMChannel{}
+	n.OutputChannels = map[int]*DAMChannel{}
 	n.InputTags = map[int]InputTag[datatypes.DAMType, datatypes.DAMType]{}
 	n.OutputTags = map[int]OutputTag[datatypes.DAMType, datatypes.DAMType]{}
 	n.TickCount.SetInt64(0)
@@ -56,14 +40,14 @@ func (node *Node) SetID(id int) {
 	node.ID = id
 }
 
-func (node *Node) SetInputChannel(portNum int, inputchan NodeInputChannel) {
-	node.InputChannels[portNum] = inputchan
-	inputchan.Port = Port{Target: node, ID: portNum}
+func (node *Node) SetInputChannel(portNum int, inputchan CommunicationChannel) {
+	node.InputChannels[portNum] = inputchan.InputChannel
+	inputchan.InputPort = Port{Target: node, ID: portNum}
 }
 
-func (node *Node) SetOutputChannel(portNum int, outputchan NodeOutputChannel) {
-	node.OutputChannels[portNum] = outputchan
-	outputchan.Port = Port{Target: node, ID: portNum}
+func (node *Node) SetOutputChannel(portNum int, outputchan CommunicationChannel) {
+	node.OutputChannels[portNum] = outputchan.OutputChannel
+	outputchan.OutputPort = Port{Target: node, ID: portNum}
 }
 
 func (node *Node) SetInputTag(portNum int, input InputTag[datatypes.DAMType, datatypes.DAMType]) {
@@ -121,7 +105,7 @@ func (node *Node) CanRun() *big.Int {
 
 		// If the tag can't run without a new update, then we have to
 		// wait for an update.
-		peeked := inputChannel.Channel.Peek()
+		peeked := inputChannel.Peek()
 
 		// If the update is in the future, then we need to wait for that update to come through.
 		utils.Max[*big.Int](nextRun, &peeked.Time, nextRun)
@@ -148,13 +132,13 @@ func (node *Node) UpdateTagData(ffTime *big.Int) {
 		// If we don't have a new update at/after FFTime, then we have to stall because we don't know if the other node just hasn't been scheduled.
 		var data []datatypes.DAMType
 		for {
-			newData := inputChannel.Channel.Peek()
+			newData := inputChannel.Peek()
 			if newData.Time.Cmp(newTime) > 0 {
 				// If this update is in the future, then we know we've collected all relevant updates
 				break
 			}
 			// otherwise, we pop the data
-			inputChannel.Channel.Dequeue()
+			inputChannel.Dequeue()
 			data = append(data, newData.Data)
 		}
 		inTag.State = inTag.Updater.Update(inTag.State, data, enabled)
@@ -180,14 +164,4 @@ func (node *Node) Tick() {
 		panic(fmt.Sprintf("Needed to skip forward %s cycles, but only ticked %s cycles", ffTime.String(), ticks.String()))
 	}
 	node.TickCount.Add(&node.TickCount, ticks)
-}
-
-func (node Node) IsPresent(checkedChannels []NodeInputChannel) bool {
-	for _, v := range checkedChannels {
-		stamp := v.Channel.Peek().Time
-		if node.TickCount.Cmp(&stamp) < 0 {
-			return false
-		}
-	}
-	return true
 }
