@@ -1,7 +1,6 @@
 package networks
 
 import (
-	"fmt"
 	"math/big"
 
 	"github.com/stanford-ppl/DAM/core"
@@ -57,7 +56,6 @@ func (ideal *IdealNetwork) Run() {
 }
 
 func (ideal *IdealNetwork) Kill() {
-	fmt.Println("Killing Network")
 	for _, v := range ideal.terminators {
 		close(v)
 	}
