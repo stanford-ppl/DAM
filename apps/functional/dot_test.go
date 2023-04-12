@@ -64,9 +64,8 @@ func Test_ideal_network(t *testing.T) {
 		return big.NewInt(1)
 	}
 
-	net.Channels = []core.CommunicationChannel{channelA, channelB, channelC, channelD}
-
-	quit := make(chan int)
+	net.Initialize([]core.CommunicationChannel{channelA, channelB, channelC, channelD})
+	t.Logf("Network Initialized")
 
 	genA := func() {
 		for i := 0; i < 10; i++ {
@@ -84,18 +83,6 @@ func Test_ideal_network(t *testing.T) {
 			channelB.OutputChannel.Enqueue(core.MakeElement(big.NewInt(int64(i)), bVal))
 		}
 		wg.Done()
-	}
-
-	networkTicker := func(quit chan int) {
-		for {
-			select {
-			case <-quit:
-				wg.Done()
-				return
-			default:
-				net.TickChannels()
-			}
-		}
 	}
 
 	node0Ticker := func() {
@@ -120,7 +107,7 @@ func Test_ideal_network(t *testing.T) {
 				t.Errorf("Expected: %d, received: %d", 3*i+1, recv.ToInt().Int64())
 			}
 		}
-		close(quit)
+		net.Kill()
 		wg.Done()
 	}
 
@@ -131,7 +118,7 @@ func Test_ideal_network(t *testing.T) {
 	go node0Ticker()
 	go node1Ticker()
 	go checker()
-	go networkTicker(quit)
+	go (func() { net.Run(); wg.Done() })()
 
 	wg.Wait()
 }
@@ -151,7 +138,7 @@ func Test_ideal_network_2(t *testing.T) {
 	channelC := mkChan()
 	channelD := mkChan()
 	channelE := mkChan()
-	net.Channels = []core.CommunicationChannel{channelA, channelB, channelC, channelD, channelE}
+	net.Initialize([]core.CommunicationChannel{channelA, channelB, channelC, channelD, channelE})
 
 	node0 := core.NewNode()
 	node0.SetID(0)
@@ -195,8 +182,6 @@ func Test_ideal_network_2(t *testing.T) {
 		return big.NewInt(1)
 	}
 
-	quit := make(chan int)
-
 	genA := func() {
 		for i := 0; i < 10; i++ {
 			aVal := datatypes.FixedPoint{Tp: fpt}
@@ -220,18 +205,6 @@ func Test_ideal_network_2(t *testing.T) {
 			channelB.OutputChannel.Enqueue(cE)
 		}
 		wg.Done()
-	}
-
-	networkTicker := func(quit chan int) {
-		for {
-			select {
-			case <-quit:
-				wg.Done()
-				return
-			default:
-				net.TickChannels()
-			}
-		}
 	}
 
 	node0Ticker := func() {
@@ -261,7 +234,7 @@ func Test_ideal_network_2(t *testing.T) {
 			}
 		}
 		t.Logf("Killing the channel")
-		close(quit)
+		net.Kill()
 		wg.Done()
 	}
 
@@ -271,7 +244,7 @@ func Test_ideal_network_2(t *testing.T) {
 	go genB()
 	go node0Ticker()
 	go node1Ticker()
-	go networkTicker(quit)
+	go (func() { net.Run(); wg.Done() })()
 	go checker()
 
 	wg.Wait()

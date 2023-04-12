@@ -70,7 +70,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 	dotProduct.SetInputChannel(1, vecToDot)
 	dotProduct.SetOutputChannel(0, dotOutput)
 
-	network.Channels = []core.CommunicationChannel{matToDot, vecToDot, dotOutput}
+	network.Initialize([]core.CommunicationChannel{matToDot, vecToDot, dotOutput})
 
 	// The state is whether we've read yet.
 	type MatVecState struct {
@@ -146,7 +146,6 @@ func TestNetworkWithBigStep(t *testing.T) {
 	})()
 
 	// checker
-	finished := make(chan bool)
 	go (func() {
 		for i := 0; i < M; i++ {
 			recv := dotOutput.InputChannel.Dequeue()
@@ -160,22 +159,11 @@ func TestNetworkWithBigStep(t *testing.T) {
 				t.Errorf("Error at element %d, %d != %d", i, recvVal, refVal)
 			}
 		}
-		finished <- true
+		network.Kill()
 		wg.Done()
 	})()
 
-	go (func() {
-		// This ticks the network until we're done
-		for {
-			select {
-			case <-finished:
-				wg.Done()
-				return
-			default:
-				network.TickChannels()
-			}
-		}
-	})()
+	go (func() { network.Run(); wg.Done() })()
 
 	wg.Wait()
 

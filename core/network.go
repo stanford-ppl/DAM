@@ -12,7 +12,9 @@ type Port struct {
 }
 
 type Network interface {
-	TickChannels()
+	Run()
+	Kill()
+	Initialize(channels []CommunicationChannel)
 }
 
 type DAMChannel struct {
@@ -76,6 +78,10 @@ func (channel DAMChannel) Len() int {
 		cur += 1
 	}
 	return cur
+}
+
+func (channel DAMChannel) Underlying() chan ChannelElement {
+	return channel.channel
 }
 
 type CommunicationChannel struct {
