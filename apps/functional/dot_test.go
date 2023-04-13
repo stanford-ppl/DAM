@@ -33,8 +33,8 @@ func Test_ideal_network(t *testing.T) {
 				a := sn.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
 				b := sn.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
 				c := datatypes.FixedAdd(a, b)
-				sn.OutputChannels[0].Enqueue(core.MakeElement(&sn.TickCount, c))
-				sn.TickCount.Add(&sn.TickCount, big.NewInt(1))
+				sn.OutputChannels[0].Enqueue(core.MakeElement(sn.TickCount(), c))
+				sn.TickCount().Add(sn.TickCount(), big.NewInt(1))
 			}
 		},
 	}
@@ -51,8 +51,8 @@ func Test_ideal_network(t *testing.T) {
 				one := datatypes.FixedPoint{Tp: fpt}
 				one.SetInt(big.NewInt(int64(1)))
 				c := datatypes.FixedAdd(a, one)
-				node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
-				node.TickCount.Add(&node.TickCount, big.NewInt(1))
+				node.OutputChannels[0].Enqueue(core.MakeElement(node.TickCount(), c))
+				node.TickCount().Add(node.TickCount(), big.NewInt(1))
 			}
 		},
 	}
@@ -131,10 +131,10 @@ func Test_ideal_network_2(t *testing.T) {
 				a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
 				b := node.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
 				c := datatypes.FixedAdd(a, b)
-				node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
-				node.OutputChannels[1].Enqueue(core.MakeElement(&node.TickCount, c))
+				node.OutputChannels[0].Enqueue(core.MakeElement(node.TickCount(), c))
+				node.OutputChannels[1].Enqueue(core.MakeElement(node.TickCount(), c))
 				t.Logf("Node 0: %v and %v --> %v\n", a.ToInt().Int64(), b.ToInt().Int64(), datatypes.FixedAdd(a, b).ToInt().Int64())
-				node.TickCount.Add(&node.TickCount, big.NewInt(1))
+				node.TickCount().Add(node.TickCount(), big.NewInt(1))
 			}
 		},
 	}
@@ -152,9 +152,9 @@ func Test_ideal_network_2(t *testing.T) {
 				one := datatypes.FixedPoint{Tp: fpt}
 				one.SetInt(big.NewInt(int64(1)))
 				c := datatypes.FixedAdd(a, one)
-				node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
+				node.OutputChannels[0].Enqueue(core.MakeElement(node.TickCount(), c))
 				t.Logf("Node 1: %v --> %v\n", a.ToInt().Int64(), datatypes.FixedAdd(a, one).ToInt().Int64())
-				node.TickCount.Add(&node.TickCount, big.NewInt(1))
+				node.TickCount().Add(node.TickCount(), big.NewInt(1))
 			}
 		},
 	}

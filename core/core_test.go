@@ -28,7 +28,8 @@ func TestSimpleNodeIO(t *testing.T) {
 		RunFunc: func(node *SimpleNode[any]) {
 			for i := 0; i < 10; i++ {
 				newTime := new(big.Int)
-				newTime.Set(&node.TickCount)
+				tick := node.TickCount()
+				newTime.Set(tick)
 				for _, channel := range node.InputChannels {
 					cTime := channel.Peek().Time
 					utils.Max[*big.Int](&cTime, newTime, newTime)
@@ -41,7 +42,7 @@ func TestSimpleNodeIO(t *testing.T) {
 				t.Logf("%d + %d = %d", a.ToInt().Int64(), b.ToInt().Int64(), c.ToInt().Int64())
 
 				delta := new(big.Int)
-				delta.Sub(newTime, &node.TickCount)
+				delta.Sub(newTime, tick)
 				node.IncrCyclesBigInt(delta)
 			}
 		},
@@ -98,7 +99,7 @@ func TestSimpleNodeIO(t *testing.T) {
 	go checker()
 
 	wg.Wait()
-	t.Logf("Total cycles elapsed: %s", node.TickCount.String())
+	t.Logf("Total cycles elapsed: %s", node.TickCount().String())
 }
 
 func TestSimpleNodeIO_Vector(t *testing.T) {
@@ -122,7 +123,7 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 				for i := 0; i < vecWidth; i++ {
 					a.Set(i, datatypes.FixedAdd(a.Get(i), one))
 				}
-				node.OutputChannels[0].Enqueue(MakeElement(&node.TickCount, a))
+				node.OutputChannels[0].Enqueue(MakeElement(node.TickCount(), a))
 				node.IncrCycles(1)
 			}
 		},

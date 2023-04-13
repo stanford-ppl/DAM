@@ -2,11 +2,13 @@ package core
 
 import (
 	"math/big"
+	"sync"
 )
 
 type PrimitiveNode[T any] struct {
 	id             int
-	TickCount      big.Int
+	tickCount      big.Int
+	tickMutex      sync.RWMutex
 	State          *T
 	InputChannels  []*DAMChannel
 	OutputChannels []*DAMChannel
@@ -24,7 +26,17 @@ func (prim *PrimitiveNode[T]) IncrCycles(step int64) {
 }
 
 func (prim *PrimitiveNode[T]) IncrCyclesBigInt(step *big.Int) {
-	prim.TickCount.Add(&prim.TickCount, step)
+	prim.tickMutex.Lock()
+	prim.tickCount.Add(&prim.tickCount, step)
+	prim.tickMutex.Unlock()
+}
+
+func (prim *PrimitiveNode[T]) TickCount() (result *big.Int) {
+	prim.tickMutex.RLock()
+	result = new(big.Int)
+	result.Set(&prim.tickCount)
+	prim.tickMutex.RUnlock()
+	return
 }
 
 func (prim *PrimitiveNode[T]) AddChild(child Context) {
@@ -45,7 +57,7 @@ func (prim *PrimitiveNode[T]) GetID() int {
 }
 
 func (prim *PrimitiveNode[T]) GetTickLowerBound() (result *big.Int) {
-	result.Set(&prim.TickCount)
+	result.Set(prim.TickCount())
 	return
 }
 

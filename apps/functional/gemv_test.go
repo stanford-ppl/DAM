@@ -43,7 +43,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 				val.SetInt(big.NewInt(int64(i)))
 				result.Set(i, val)
 			}
-			node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, result))
+			node.OutputChannels[0].Enqueue(core.MakeElement(node.TickCount(), result))
 			node.IncrCycles(1)
 		},
 	}
@@ -60,7 +60,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 					t.Logf("Mat[%d, %d] = %d", j, i, val.ToInt().Int64())
 					result.Set(i, val)
 				}
-				node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, result))
+				node.OutputChannels[0].Enqueue(core.MakeElement(node.TickCount(), result))
 				node.IncrCycles(int64(timePerVecInMatrix))
 			}
 		},
@@ -86,12 +86,12 @@ func TestNetworkWithBigStep(t *testing.T) {
 					vec := vecChannel.Dequeue()
 					chanTime := vec.Time
 					node.State.Vector = vec.Data.(datatypes.Vector[datatypes.FixedPoint])
-					timeDelta.Sub(&chanTime, &node.TickCount)
+					timeDelta.Sub(&chanTime, node.TickCount())
 					utils.Max[*big.Int](timeDelta, tick, tick)
 				}
 				matInput := matChannel.Dequeue()
 				timeDelta := new(big.Int)
-				timeDelta.Sub(&matInput.Time, &node.TickCount)
+				timeDelta.Sub(&matInput.Time, node.TickCount())
 				utils.Max[*big.Int](timeDelta, tick, tick)
 
 				matVec := matInput.Data.(datatypes.Vector[datatypes.FixedPoint])
@@ -107,7 +107,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 				}
 
 				outputTime := big.NewInt(int64(dotTime))
-				outputTime.Add(&node.TickCount, tick)
+				outputTime.Add(node.TickCount(), tick)
 				t.Logf("Enqueuing result %d (simulated time %d)", sum.ToInt().Int64(), outputTime.Int64())
 				node.OutputChannels[0].Enqueue(core.MakeElement(outputTime, sum))
 				node.IncrCyclesBigInt(tick)
@@ -147,7 +147,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 
 	wg.Wait()
 
-	t.Logf("Matrix Producer finished at %d", matProducer.TickCount.Int64())
-	t.Logf("Dot Product finished at %d", dotProduct.TickCount.Int64())
+	t.Logf("Matrix Producer finished at %d", matProducer.TickCount().Int64())
+	t.Logf("Dot Product finished at %d", dotProduct.TickCount().Int64())
 	t.Logf("Dot product delay is %d", dotTime)
 }
