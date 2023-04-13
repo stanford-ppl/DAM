@@ -2,7 +2,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "utils",
-    srcs = ["bigutils.go"],
+    srcs = [
+        "bigutils.go",
+        "optional.go",
+        "sliceutils.go",
+    ],
     importpath = "github.com/stanford-ppl/DAM/utils",
     visibility = ["//visibility:public"],
 )

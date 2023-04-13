@@ -1,4 +1,4 @@
-package apps
+package functional_test
 
 import (
 	"math/big"
@@ -11,7 +11,8 @@ import (
 	"github.com/stanford-ppl/DAM/datatypes"
 )
 
-// TODO: This test should be in `core_test.go` but Bazel says it cannot find out where `ideal_network` package is.  Find out why this is the case.
+var fpt = datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
+
 func Test_ideal_network(t *testing.T) {
 	net := networks.IdealNetwork{}
 
@@ -22,50 +23,50 @@ func Test_ideal_network(t *testing.T) {
 	channelA := core.MakeCommunicationChannel[datatypes.FixedPoint](channelSize)
 	channelB := core.MakeCommunicationChannel[datatypes.FixedPoint](channelSize)
 	channelC := core.MakeCommunicationChannel[datatypes.FixedPoint](channelSize)
+	channelD := core.MakeCommunicationChannel[datatypes.FixedPoint](channelSize)
 
-	node0 := core.NewNode()
-	node0.SetID(0)
-	node0.SetInputChannel(0, channelA)
-	node0.SetInputChannel(1, channelB)
-	node0.SetOutputChannel(0, channelC)
+	ctx := core.MakePrimitiveContext(nil)
 
-	if !node0.Validate() {
-		t.Errorf("Node %d failed validation", node0.ID)
+	node0 := core.SimpleNode[any]{
+		RunFunc: func(sn *core.SimpleNode[any]) {
+			for i := 0; i < 10; i++ {
+				a := sn.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
+				b := sn.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
+				c := datatypes.FixedAdd(a, b)
+				sn.OutputChannels[0].Enqueue(core.MakeElement(&sn.TickCount, c))
+				sn.TickCount.Add(&sn.TickCount, big.NewInt(1))
+			}
+		},
 	}
-
-	node0.Step = func(node *core.Node, _ *big.Int) *big.Int {
-		a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
-		b := node.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
-		c := datatypes.FixedAdd(a, b)
-		node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
-		t.Logf("Node 0: %v and %v --> %v\n", a.ToInt().Int64(), b.ToInt().Int64(), datatypes.FixedAdd(a, b).ToInt().Int64())
-		return big.NewInt(1)
-	}
+	node0.AddInputChannel(channelA)
+	node0.AddInputChannel(channelB)
+	node0.AddOutputChannel(channelC)
 
 	// ----------------------
 
-	channelD := core.MakeCommunicationChannel[datatypes.FixedPoint](channelSize)
-	node1 := core.NewNode()
-	node1.SetID(1)
-	node1.SetInputChannel(0, channelC)
-	node1.SetOutputChannel(0, channelD)
-
-	if !node1.Validate() {
-		t.Errorf("Node %d failed validation", node1.ID)
+	node1 := core.SimpleNode[any]{
+		RunFunc: func(node *core.SimpleNode[any]) {
+			for i := 0; i < 10; i++ {
+				a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
+				one := datatypes.FixedPoint{Tp: fpt}
+				one.SetInt(big.NewInt(int64(1)))
+				c := datatypes.FixedAdd(a, one)
+				node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
+				node.TickCount.Add(&node.TickCount, big.NewInt(1))
+			}
+		},
 	}
+	node1.AddInputChannel(channelC)
+	node1.AddOutputChannel(channelD)
 
-	node1.Step = func(node *core.Node, _ *big.Int) *big.Int {
-		a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
-		one := datatypes.FixedPoint{Tp: fpt}
-		one.SetInt(big.NewInt(int64(1)))
-		c := datatypes.FixedAdd(a, one)
-		node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
-		t.Logf("Node 1: %v --> %v\n", a.ToInt().Int64(), datatypes.FixedAdd(a, one).ToInt().Int64())
-		return big.NewInt(1)
-	}
+	ctx.AddChild(&node0)
+	ctx.AddChild(&node1)
 
 	net.Initialize([]core.CommunicationChannel{channelA, channelB, channelC, channelD})
 	t.Logf("Network Initialized")
+
+	ctx.Init()
+	t.Logf("Context Initialized")
 
 	genA := func() {
 		for i := 0; i < 10; i++ {
@@ -84,21 +85,6 @@ func Test_ideal_network(t *testing.T) {
 		}
 		wg.Done()
 	}
-
-	node0Ticker := func() {
-		for i := 0; i < 10; i++ {
-			node0.Tick()
-		}
-		wg.Done()
-	}
-
-	node1Ticker := func() {
-		for i := 0; i < 10; i++ {
-			node1.Tick()
-		}
-		wg.Done()
-	}
-
 	checker := func() {
 		for i := 0; i < 10; i++ {
 			recv := channelD.InputChannel.Dequeue().Data.(datatypes.FixedPoint)
@@ -111,12 +97,11 @@ func Test_ideal_network(t *testing.T) {
 		wg.Done()
 	}
 
-	wg.Add(6)
+	wg.Add(5)
 
 	go genA()
 	go genB()
-	go node0Ticker()
-	go node1Ticker()
+	go (func() { ctx.Run(); wg.Done() })()
 	go checker()
 	go (func() { net.Run(); wg.Done() })()
 
@@ -140,47 +125,46 @@ func Test_ideal_network_2(t *testing.T) {
 	channelE := mkChan()
 	net.Initialize([]core.CommunicationChannel{channelA, channelB, channelC, channelD, channelE})
 
-	node0 := core.NewNode()
-	node0.SetID(0)
-	node0.SetInputChannel(0, channelA)
-	node0.SetInputChannel(1, channelB)
-	node0.SetOutputChannel(0, channelC)
-	node0.SetOutputChannel(1, channelD)
-
-	if !node0.Validate() {
-		t.Errorf("Node %d failed validation", node0.ID)
+	node0 := core.SimpleNode[any]{
+		RunFunc: func(node *core.SimpleNode[any]) {
+			for i := 0; i < 10; i++ {
+				a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
+				b := node.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
+				c := datatypes.FixedAdd(a, b)
+				node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
+				node.OutputChannels[1].Enqueue(core.MakeElement(&node.TickCount, c))
+				t.Logf("Node 0: %v and %v --> %v\n", a.ToInt().Int64(), b.ToInt().Int64(), datatypes.FixedAdd(a, b).ToInt().Int64())
+				node.TickCount.Add(&node.TickCount, big.NewInt(1))
+			}
+		},
 	}
-
-	node0.Step = func(node *core.Node, _ *big.Int) *big.Int {
-		a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
-		b := node.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
-		c := datatypes.FixedAdd(a, b)
-		node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
-		node.OutputChannels[1].Enqueue(core.MakeElement(&node.TickCount, c))
-		t.Logf("Node 0: %v and %v --> %v\n", a.ToInt().Int64(), b.ToInt().Int64(), datatypes.FixedAdd(a, b).ToInt().Int64())
-		return big.NewInt(1)
-	}
+	node0.AddInputChannel(channelA)
+	node0.AddInputChannel(channelB)
+	node0.AddOutputChannel(channelC)
+	node0.AddOutputChannel(channelD)
 
 	// ----------------------
 
-	node1 := core.NewNode()
-	node1.SetID(1)
-	node1.SetInputChannel(0, channelC)
-	node1.SetOutputChannel(0, channelE)
-
-	if !node1.Validate() {
-		t.Errorf("Node %d failed validation", node1.ID)
+	node1 := core.SimpleNode[any]{
+		RunFunc: func(node *core.SimpleNode[any]) {
+			for i := 0; i < 10; i++ {
+				a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
+				one := datatypes.FixedPoint{Tp: fpt}
+				one.SetInt(big.NewInt(int64(1)))
+				c := datatypes.FixedAdd(a, one)
+				node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
+				t.Logf("Node 1: %v --> %v\n", a.ToInt().Int64(), datatypes.FixedAdd(a, one).ToInt().Int64())
+				node.TickCount.Add(&node.TickCount, big.NewInt(1))
+			}
+		},
 	}
+	node1.AddInputChannel(channelC)
+	node1.AddOutputChannel(channelE)
 
-	node1.Step = func(node *core.Node, _ *big.Int) *big.Int {
-		a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
-		one := datatypes.FixedPoint{Tp: fpt}
-		one.SetInt(big.NewInt(int64(1)))
-		c := datatypes.FixedAdd(a, one)
-		node.OutputChannels[0].Enqueue(core.MakeElement(&node.TickCount, c))
-		t.Logf("Node 1: %v --> %v\n", a.ToInt().Int64(), datatypes.FixedAdd(a, one).ToInt().Int64())
-		return big.NewInt(1)
-	}
+	ctx := core.MakePrimitiveContext(nil)
+	ctx.AddChild(&node0)
+	ctx.AddChild(&node1)
+	ctx.Init()
 
 	genA := func() {
 		for i := 0; i < 10; i++ {
@@ -207,20 +191,6 @@ func Test_ideal_network_2(t *testing.T) {
 		wg.Done()
 	}
 
-	node0Ticker := func() {
-		for i := 0; i < 10; i++ {
-			node0.Tick()
-		}
-		wg.Done()
-	}
-
-	node1Ticker := func() {
-		for i := 0; i < 10; i++ {
-			node1.Tick()
-		}
-		wg.Done()
-	}
-
 	checker := func() {
 		for i := 0; i < 10; i++ {
 			recv := channelE.InputChannel.Dequeue().Data.(datatypes.FixedPoint)
@@ -238,12 +208,11 @@ func Test_ideal_network_2(t *testing.T) {
 		wg.Done()
 	}
 
-	wg.Add(6)
+	wg.Add(5)
 
 	go genA()
 	go genB()
-	go node0Ticker()
-	go node1Ticker()
+	go (func() { ctx.Run(); wg.Done() })()
 	go (func() { net.Run(); wg.Done() })()
 	go checker()
 

@@ -6,11 +6,6 @@ import (
 	"github.com/stanford-ppl/DAM/datatypes"
 )
 
-type Port struct {
-	ID     int
-	Target *Node
-}
-
 type Network interface {
 	Run()
 	Kill()
@@ -84,9 +79,6 @@ func (channel DAMChannel) Underlying() chan ChannelElement {
 }
 
 type CommunicationChannel struct {
-	InputPort  Port
-	OutputPort Port
-
 	// Serves as the input 'buffer' of a DAM Node
 	InputChannel *DAMChannel
 

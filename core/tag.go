@@ -1,8 +1,6 @@
 package core
 
-type TagType[D any, U any] struct {
-	TagID int
-}
+type TagType[D any, U any] struct{}
 
 type InputTagUpdater[D any, U any] interface {
 	CanRun(update U) bool
@@ -10,8 +8,7 @@ type InputTagUpdater[D any, U any] interface {
 }
 
 type InputTag[D any, U any] struct {
-	Tag       TagType[D, U] // Points back to the Tag
-	InputPort Port
+	Tag TagType[D, U] // Points back to the Tag
 
 	State D
 
@@ -27,7 +24,6 @@ type OutputTagPublisher[D any, U any] interface {
 }
 
 type OutputTag[D any, U any] struct {
-	Tag        TagType[D, U]
-	OutputPort Port
-	Publisher  OutputTagPublisher[D, U]
+	Tag       TagType[D, U]
+	Publisher OutputTagPublisher[D, U]
 }

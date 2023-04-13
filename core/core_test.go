@@ -5,8 +5,6 @@ import (
 	"sync"
 	"testing"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/stanford-ppl/DAM/datatypes"
 	"github.com/stanford-ppl/DAM/utils"
 )
@@ -22,18 +20,37 @@ func TestSimpleNodeIO(t *testing.T) {
 	channelA := mkChan()
 	channelB := mkChan()
 	channelC := mkChan()
+	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
 
-	node := NewNode()
-	node.SetID(0)
-	node.SetInputChannel(0, channelA)
-	node.SetInputChannel(1, channelB)
-	node.SetOutputChannel(0, channelC)
+	ctx := MakePrimitiveContext(nil)
 
-	if !node.Validate() {
-		t.Errorf("Node %d failed validation", node.ID)
+	node := SimpleNode[any]{
+		RunFunc: func(node *SimpleNode[any]) {
+			for i := 0; i < 10; i++ {
+				newTime := new(big.Int)
+				newTime.Set(&node.TickCount)
+				for _, channel := range node.InputChannels {
+					cTime := channel.Peek().Time
+					utils.Max[*big.Int](&cTime, newTime, newTime)
+				}
+
+				a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
+				b := node.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
+				c := datatypes.FixedAdd(a, b)
+				node.OutputChannels[0].Enqueue(MakeElement(newTime, c))
+				t.Logf("%d + %d = %d", a.ToInt().Int64(), b.ToInt().Int64(), c.ToInt().Int64())
+
+				delta := new(big.Int)
+				delta.Sub(newTime, &node.TickCount)
+				node.IncrCyclesBigInt(delta)
+			}
+		},
 	}
 
-	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
+	node.AddInputChannel(channelA)
+	node.AddInputChannel(channelB)
+	node.AddOutputChannel(channelC)
+	ctx.AddChild(&node)
 
 	var wg sync.WaitGroup
 	genA := func() {
@@ -58,32 +75,6 @@ func TestSimpleNodeIO(t *testing.T) {
 		wg.Done()
 	}
 
-	node.Step = func(node *Node, _ *big.Int) *big.Int {
-		newTime := new(big.Int)
-		newTime.Set(&node.TickCount)
-		for _, channel := range maps.Values(node.InputChannels) {
-			cTime := channel.Peek().Time
-			utils.Max[*big.Int](&cTime, newTime, newTime)
-		}
-
-		a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
-		b := node.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
-		c := datatypes.FixedAdd(a, b)
-		node.OutputChannels[0].Enqueue(MakeElement(newTime, c))
-		t.Logf("%d + %d = %d", a.ToInt().Int64(), b.ToInt().Int64(), c.ToInt().Int64())
-
-		delta := new(big.Int)
-		delta.Sub(newTime, &node.TickCount)
-		return delta
-	}
-
-	main := func() {
-		for i := 0; i < 10; i++ {
-			node.Tick()
-		}
-		wg.Done()
-	}
-
 	checker := func() {
 		for i := 0; i < 10; i++ {
 			recv := channelC.OutputChannel.Dequeue().Data.(datatypes.FixedPoint)
@@ -99,7 +90,11 @@ func TestSimpleNodeIO(t *testing.T) {
 
 	go genA()
 	go genB()
-	go main()
+	go (func() {
+		ctx.Init()
+		ctx.Run()
+		wg.Done()
+	})()
 	go checker()
 
 	wg.Wait()
@@ -110,20 +105,33 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 	var channelSize uint = 10
 	var vecWidth int = 10
 	var numVecs int = 3
+	ctx := MakePrimitiveContext(nil)
+	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
 
 	inputChannel := MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](channelSize)
 	outputChannel := MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](channelSize)
 
-	node := NewNode()
-	node.SetID(0)
-	node.SetInputChannel(0, inputChannel)
-	node.SetOutputChannel(0, outputChannel)
+	node := SimpleNode[any]{
+		RunFunc: func(node *SimpleNode[any]) {
+			for j := 0; j < numVecs; j++ {
+				a := node.InputChannels[0].Dequeue().Data.(datatypes.Vector[datatypes.FixedPoint])
 
-	if !node.Validate() {
-		t.Errorf("Node %d failed validation", node.ID)
+				one := datatypes.FixedPoint{Tp: fpt}
+				one.SetInt(big.NewInt(int64(1)))
+
+				for i := 0; i < vecWidth; i++ {
+					a.Set(i, datatypes.FixedAdd(a.Get(i), one))
+				}
+				node.OutputChannels[0].Enqueue(MakeElement(&node.TickCount, a))
+				node.IncrCycles(1)
+			}
+		},
 	}
 
-	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
+	node.AddInputChannel(inputChannel)
+	node.AddOutputChannel(outputChannel)
+
+	ctx.AddChild(&node)
 
 	var wg sync.WaitGroup
 
@@ -136,28 +144,6 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 				v.Set(i, aVal)
 			}
 			inputChannel.InputChannel.Enqueue(MakeElement(big.NewInt(int64(n)), v))
-		}
-		wg.Done()
-	}
-
-	node.Step = func(node *Node, _ *big.Int) *big.Int {
-		a := node.InputChannels[0].Dequeue().Data.(datatypes.Vector[datatypes.FixedPoint])
-
-		one := datatypes.FixedPoint{Tp: fpt}
-		one.SetInt(big.NewInt(int64(1)))
-
-		for i := 0; i < vecWidth; i++ {
-			a.Set(i, datatypes.FixedAdd(a.Get(i), one))
-		}
-		node.OutputChannels[0].Enqueue(MakeElement(&node.TickCount, a))
-		return big.NewInt(1)
-	}
-
-	main := func() {
-		for n := 0; n < numVecs; n++ {
-			for i := 0; i < 1; i++ {
-				node.Tick()
-			}
 		}
 		wg.Done()
 	}
@@ -180,7 +166,11 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 	wg.Add(3)
 
 	go genA()
-	go main()
+	go (func() {
+		ctx.Init()
+		ctx.Run()
+		wg.Done()
+	})()
 	go checker()
 
 	wg.Wait()
