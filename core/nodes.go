@@ -43,13 +43,13 @@ func (prim *PrimitiveNode[T]) AddChild(child Context) {
 	panic("AddChild Not Implemented on Primitive Nodes")
 }
 
-func (prim *PrimitiveNode[T]) GetNewNodeID() int {
+func (prim *PrimitiveNode[T]) GetNewChildID() int {
 	panic("GetNewID Not Implemented on Primitive Nodes")
 }
 
 func (prim *PrimitiveNode[T]) SetParent(parent Context) {
 	prim.parent = parent
-	prim.id = parent.GetNewNodeID()
+	prim.id = parent.GetNewChildID()
 }
 
 func (prim *PrimitiveNode[T]) GetID() int {

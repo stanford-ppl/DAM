@@ -30,8 +30,10 @@ func Test_ideal_network(t *testing.T) {
 	node0 := core.SimpleNode[any]{
 		RunFunc: func(sn *core.SimpleNode[any]) {
 			for i := 0; i < 10; i++ {
-				a := sn.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
-				b := sn.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
+				tmp, _ := sn.InputChannels[0].Dequeue()
+				tmp2, _ := sn.InputChannels[1].Dequeue()
+				a := tmp.Data.(datatypes.FixedPoint)
+				b := tmp2.Data.(datatypes.FixedPoint)
 				c := datatypes.FixedAdd(a, b)
 				sn.OutputChannels[0].Enqueue(core.MakeElement(sn.TickCount(), c))
 				sn.TickCount().Add(sn.TickCount(), big.NewInt(1))
@@ -47,7 +49,8 @@ func Test_ideal_network(t *testing.T) {
 	node1 := core.SimpleNode[any]{
 		RunFunc: func(node *core.SimpleNode[any]) {
 			for i := 0; i < 10; i++ {
-				a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
+				tmp, _ := node.InputChannels[0].Dequeue()
+				a := tmp.Data.(datatypes.FixedPoint)
 				one := datatypes.FixedPoint{Tp: fpt}
 				one.SetInt(big.NewInt(int64(1)))
 				c := datatypes.FixedAdd(a, one)
@@ -87,7 +90,8 @@ func Test_ideal_network(t *testing.T) {
 	}
 	checker := func() {
 		for i := 0; i < 10; i++ {
-			recv := channelD.InputChannel.Dequeue().Data.(datatypes.FixedPoint)
+			tmp, _ := channelD.InputChannel.Dequeue()
+			recv := tmp.Data.(datatypes.FixedPoint)
 			t.Logf("Checking %d\n", recv.ToInt())
 			if recv.ToInt().Int64() != int64(3*i+1) {
 				t.Errorf("Expected: %d, received: %d", 3*i+1, recv.ToInt().Int64())
@@ -128,8 +132,10 @@ func Test_ideal_network_2(t *testing.T) {
 	node0 := core.SimpleNode[any]{
 		RunFunc: func(node *core.SimpleNode[any]) {
 			for i := 0; i < 10; i++ {
-				a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
-				b := node.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
+				tmp, _ := node.InputChannels[0].Dequeue()
+				a := tmp.Data.(datatypes.FixedPoint)
+				tmp2, _ := node.InputChannels[1].Dequeue()
+				b := tmp2.Data.(datatypes.FixedPoint)
 				c := datatypes.FixedAdd(a, b)
 				node.OutputChannels[0].Enqueue(core.MakeElement(node.TickCount(), c))
 				node.OutputChannels[1].Enqueue(core.MakeElement(node.TickCount(), c))
@@ -148,7 +154,8 @@ func Test_ideal_network_2(t *testing.T) {
 	node1 := core.SimpleNode[any]{
 		RunFunc: func(node *core.SimpleNode[any]) {
 			for i := 0; i < 10; i++ {
-				a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
+				tmp, _ := node.InputChannels[0].Dequeue()
+				a := tmp.Data.(datatypes.FixedPoint)
 				one := datatypes.FixedPoint{Tp: fpt}
 				one.SetInt(big.NewInt(int64(1)))
 				c := datatypes.FixedAdd(a, one)
@@ -193,9 +200,11 @@ func Test_ideal_network_2(t *testing.T) {
 
 	checker := func() {
 		for i := 0; i < 10; i++ {
-			recv := channelE.InputChannel.Dequeue().Data.(datatypes.FixedPoint)
+			tmp, _ := channelE.InputChannel.Dequeue()
+			recv := tmp.Data.(datatypes.FixedPoint)
 			t.Logf("Recv: %s", recv)
-			recv_2 := channelD.InputChannel.Dequeue().Data.(datatypes.FixedPoint)
+			tmp2, _ := channelD.InputChannel.Dequeue()
+			recv_2 := tmp2.Data.(datatypes.FixedPoint)
 			t.Logf("Recv_2: %s", recv_2)
 			res := datatypes.FixedAdd(recv, recv_2)
 			t.Logf("Checking %d %d\n", i, res.ToInt())

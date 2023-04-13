@@ -10,7 +10,7 @@ import (
 // A Context is a "program" subcomponent
 type Context interface {
 	// Creates a new ID, only needs to be unique within this context
-	GetNewNodeID() int
+	GetNewChildID() int
 
 	// Lower bound on progress on this context
 	GetTickLowerBound() *big.Int
@@ -34,7 +34,7 @@ type primitiveContext struct {
 	ID           int
 }
 
-func (prim *primitiveContext) GetNewNodeID() (result int) {
+func (prim *primitiveContext) GetNewChildID() (result int) {
 	result = prim.nextID
 	prim.nextID++
 	return
@@ -96,7 +96,7 @@ func (prim *primitiveContext) SetParent(parent Context) {
 		panic("Already had a parent set! Can't set another parent.")
 	}
 	prim.parent = parent
-	prim.ID = parent.GetNewNodeID()
+	prim.ID = parent.GetNewChildID()
 }
 
 func MakePrimitiveContext(parent Context) Context {

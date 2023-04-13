@@ -37,15 +37,22 @@ func (ideal *IdealNetwork) Run() {
 			select {
 			case <-killChan:
 				return
-			case input := <-outputChan:
-				// increment the cycle count
-				newTime := big.NewInt(1)
-				newTime.Add(newTime, &input.Time)
-				newInput := core.MakeElement(newTime, input.Data)
-				select {
-				case <-killChan:
+			case input, ok := <-outputChan:
+				if ok {
+					// increment the cycle count
+					newTime := big.NewInt(1)
+					newTime.Add(newTime, &input.Time)
+					newInput := core.MakeElement(newTime, input.Data)
+					select {
+					case <-killChan:
+						return
+					case inputChan <- newInput:
+					}
+				} else {
+					// If the output channel was closed, then we're done!
+					// Close the input channel as well, and then break
+					close(inputChan)
 					return
-				case inputChan <- newInput:
 				}
 			}
 		}

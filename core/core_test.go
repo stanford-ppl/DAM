@@ -35,8 +35,8 @@ func TestSimpleNodeIO(t *testing.T) {
 					utils.Max[*big.Int](&cTime, newTime, newTime)
 				}
 
-				a := node.InputChannels[0].Dequeue().Data.(datatypes.FixedPoint)
-				b := node.InputChannels[1].Dequeue().Data.(datatypes.FixedPoint)
+				a := node.InputChannels[0].DequeueNoCheck().Data.(datatypes.FixedPoint)
+				b := node.InputChannels[1].DequeueNoCheck().Data.(datatypes.FixedPoint)
 				c := datatypes.FixedAdd(a, b)
 				node.OutputChannels[0].Enqueue(MakeElement(newTime, c))
 				t.Logf("%d + %d = %d", a.ToInt().Int64(), b.ToInt().Int64(), c.ToInt().Int64())
@@ -78,7 +78,7 @@ func TestSimpleNodeIO(t *testing.T) {
 
 	checker := func() {
 		for i := 0; i < 10; i++ {
-			recv := channelC.OutputChannel.Dequeue().Data.(datatypes.FixedPoint)
+			recv := channelC.OutputChannel.DequeueNoCheck().Data.(datatypes.FixedPoint)
 			t.Logf("Output %d\n", recv.ToInt())
 			if recv.ToInt().Int64() != int64(3*i) {
 				t.Errorf("Expected: %d, received: %d", 3*i, recv.ToInt().Int64())
@@ -115,7 +115,7 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 	node := SimpleNode[any]{
 		RunFunc: func(node *SimpleNode[any]) {
 			for j := 0; j < numVecs; j++ {
-				a := node.InputChannels[0].Dequeue().Data.(datatypes.Vector[datatypes.FixedPoint])
+				a := node.InputChannels[0].DequeueNoCheck().Data.(datatypes.Vector[datatypes.FixedPoint])
 
 				one := datatypes.FixedPoint{Tp: fpt}
 				one.SetInt(big.NewInt(int64(1)))
@@ -152,7 +152,7 @@ func TestSimpleNodeIO_Vector(t *testing.T) {
 	checker := func() {
 		for n := 0; n < numVecs; n++ {
 			for i := 0; i < 1; i++ {
-				recv := outputChannel.OutputChannel.Dequeue().Data.(datatypes.Vector[datatypes.FixedPoint])
+				recv := outputChannel.OutputChannel.DequeueNoCheck().Data.(datatypes.Vector[datatypes.FixedPoint])
 				for j := 0; j < vecWidth; j++ {
 					t.Logf("Output for index: %d is %d", j, recv.Get(j).ToInt())
 					if recv.Get(j).ToInt().Int64() != int64(j+1) {

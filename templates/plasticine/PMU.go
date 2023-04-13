@@ -56,97 +56,75 @@ package plasticine
 // 	Type   AccessType
 // }
 
-// type PMUData struct {
-// 	underlying []datatypes.DAMType
-// 	MaxSize    int
-// 	behavior   PMUBehavior
-
-// 	readData  []PMURead
-// 	writeData []PMUWrite
-// }
-
 // type PMU[T datatypes.DAMType] struct {
 // 	core.PrimitiveNode[[]T]
+// 	MaxSize   int
+// 	behavior  PMUBehavior
+// 	readData  []PMURead
+// 	writeData []PMUWrite
 // }
 
 // // Compile-time assertion that PMUs are Contexts
 // var _ core.Context = (*PMU[datatypes.DAMType])(nil)
 
-// func makePMUData(maxSize int, behavior PMUBehavior) *PMUData {
-// 	result := new(PMUData)
-// 	result.underlying = make([]datatypes.DAMType, maxSize)
-// 	result.MaxSize = maxSize
-// 	result.behavior = behavior
-// 	return result
+// func (pmu *PMU[T]) Init() {
+// 	v := make([]T, pmu.MaxSize)
+// 	pmu.State = &v
 // }
 
-// func (data *PMUData) mapAndCheckIndex(index int) int {
-// 	if !data.behavior.NO_MOD_ADDRESS {
-// 		return index % data.MaxSize
+// func (pmu *PMU[T]) mapAndCheckIndex(index int) int {
+// 	if !pmu.behavior.NO_MOD_ADDRESS {
+// 		return index % pmu.MaxSize
 // 	}
-// 	if index >= data.MaxSize {
-// 		panic(fmt.Sprintf("Out of bounds access at address %d (PMU Size %d)", index, data.MaxSize))
+// 	if index >= pmu.MaxSize {
+// 		panic(fmt.Sprintf("Out of bounds access at address %d (PMU Size %d)", index, pmu.MaxSize))
 // 	}
 // 	return index
 // }
 
-// func (data *PMUData) Write(index int, value datatypes.DAMType) {
-// 	data.underlying[data.mapAndCheckIndex(index)] = value
+// func (pmu *PMU[T]) Write(index int, value T) {
+// 	(*pmu.State)[pmu.mapAndCheckIndex(index)] = value
 // }
 
-// func (data *PMUData) Read(index int) datatypes.DAMType {
-// 	return data.underlying[data.mapAndCheckIndex(index)]
+// func (pmu *PMU[T]) Read(index int) datatypes.DAMType {
+// 	return (*pmu.State)[pmu.mapAndCheckIndex(index)]
 // }
 
-// func MakePMU(nElements int, behavioralFlags PMUBehavior) core.Context {
-// 	node := core.NewNode()
-
-// 	node.State = makePMUData(nElements, behavioralFlags)
-
-// 	node.Step = func(node *core.Node, ffTime *big.Int) *big.Int {
-// 		//
-// 		return ffTime
+// func (pmu *PMU[T]) AddReader(addr core.CommunicationChannel, outputs []core.CommunicationChannel, tp AccessType) {
+// 	readData := PMURead{
+// 		Type: tp,
+// 		Addr: pmu.AddInputChannel(addr),
+// 		Outputs: utils.Map(outputs, func(channel core.CommunicationChannel) int {
+// 			return pmu.AddInputChannel(channel)
+// 		}),
 // 	}
-
-// 	return node
+// 	pmu.readData = append(pmu.readData, readData)
 // }
 
-// func AddPMURead(node *core.Node, addr core.CommunicationChannel, outputs []core.CommunicationChannel, tp AccessType) {
-// 	readData := PMURead{Type: tp}
-// 	readData.Addr = node.GetNextInput()
-// 	node.SetInputChannel(readData.Addr, addr)
-
-// 	readData.Outputs = make([]int, len(outputs))
-// 	for i, cc := range outputs {
-// 		outputPort := node.GetNextOutput()
-// 		readData.Outputs[i] = outputPort
-// 		node.SetOutputChannel(outputPort, cc)
-// 	}
-// 	node.State.(*PMUData).readData = append(node.State.(*PMUData).readData, readData)
-// }
-
-// func AddPMUWrite(node *core.Node, addr core.CommunicationChannel,
-// 	data core.CommunicationChannel, enable utils.Option[core.CommunicationChannel], ack []core.CommunicationChannel, tp AccessType,
+// func (pmu *PMU[T]) AddWriter(addr core.CommunicationChannel, data core.CommunicationChannel,
+// 	enable utils.Option[core.CommunicationChannel], ack []core.CommunicationChannel, tp AccessType,
 // ) {
-// 	writeData := PMUWrite{Type: tp}
-// 	writeData.Addr = node.GetNextInput()
-// 	node.SetInputChannel(writeData.Addr, addr)
-// 	writeData.Data = node.GetNextInput()
-// 	node.SetInputChannel(writeData.Data, data)
-
+// 	wData := PMUWrite{
+// 		Type: tp,
+// 		Addr: pmu.AddInputChannel(addr),
+// 		Data: pmu.AddInputChannel(data),
+// 		Ack: utils.Map(ack, func(channel core.CommunicationChannel) int {
+// 			return pmu.AddInputChannel(channel)
+// 		}),
+// 		Enable: -1,
+// 	}
 // 	if enable.IsSet() {
-// 		writeData.Enable = node.GetNextInput()
-// 		node.SetInputChannel(writeData.Enable, enable.Get())
-// 	} else {
-// 		writeData.Enable = -1
+// 		wData.Enable = pmu.AddInputChannel(enable.Get())
 // 	}
+// 	pmu.writeData = append(pmu.writeData, wData)
+// }
 
-// 	writeData.Ack = make([]int, len(ack))
-// 	for i, cc := range ack {
-// 		ackPort := node.GetNextOutput()
-// 		writeData.Ack[i] = ackPort
-// 		node.SetOutputChannel(ackPort, cc)
+// func (pmu *PMU[T]) Run() {
+// 	// Get the first available set of channels
+// 	var channelTimings []big.Int
+// 	for _, p := range pmu.readData {
+// 		channel := pmu.InputChannels[p.Addr]
+// 		// check if channel is alive
+// 		channelTimings
 // 	}
-
-// 	node.State.(*PMUData).writeData = append(node.State.(*PMUData).writeData, writeData)
 // }

@@ -83,13 +83,13 @@ func TestNetworkWithBigStep(t *testing.T) {
 					t.Log("Initializing Vector")
 					node.State.HasInitialized = true
 					timeDelta := new(big.Int)
-					vec := vecChannel.Dequeue()
+					vec, _ := vecChannel.Dequeue()
 					chanTime := vec.Time
 					node.State.Vector = vec.Data.(datatypes.Vector[datatypes.FixedPoint])
 					timeDelta.Sub(&chanTime, node.TickCount())
 					utils.Max[*big.Int](timeDelta, tick, tick)
 				}
-				matInput := matChannel.Dequeue()
+				matInput, _ := matChannel.Dequeue()
 				timeDelta := new(big.Int)
 				timeDelta.Sub(&matInput.Time, node.TickCount())
 				utils.Max[*big.Int](timeDelta, tick, tick)
@@ -127,7 +127,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 	// checker
 	go (func() {
 		for i := 0; i < M; i++ {
-			recv := dotOutput.InputChannel.Dequeue()
+			recv, _ := dotOutput.InputChannel.Dequeue()
 			recvVal := recv.Data.(datatypes.FixedPoint).ToInt().Int64()
 			// The reference value for element i is Sum(a * (a + i) for a in range(N))
 			var refVal int = 0

@@ -15,6 +15,7 @@ type Network interface {
 type DAMChannel struct {
 	channel chan ChannelElement
 	head    *ChannelElement
+	headOk  bool
 }
 
 type ChannelElement struct {
@@ -29,21 +30,39 @@ func MakeElement(time *big.Int, data datatypes.DAMType) ChannelElement {
 }
 
 func MakeChannel[T datatypes.DAMType](channelSize uint) *DAMChannel {
-	return &DAMChannel{make(chan ChannelElement, channelSize), nil}
+	return &DAMChannel{make(chan ChannelElement, channelSize), nil, false}
 }
 
 func (channel *DAMChannel) Peek() ChannelElement {
 	if channel.head == nil {
-		tmp := <-channel.channel
+		tmp, ok := <-channel.channel
 		channel.head = &tmp
+		channel.headOk = ok
 	}
 	return *channel.head
 }
 
-func (channel *DAMChannel) Dequeue() ChannelElement {
+func (channel *DAMChannel) Close() {
+	close(channel.channel)
+}
+
+func (channel *DAMChannel) Dequeue() (ChannelElement, bool) {
 	if channel.head != nil {
 		tmp := *channel.head
 		channel.head = nil
+		ok := channel.headOk
+		channel.headOk = false
+		return tmp, ok
+	}
+	v, ok := <-channel.channel
+	return v, ok
+}
+
+func (channel *DAMChannel) DequeueNoCheck() ChannelElement {
+	if channel.head != nil {
+		tmp := *channel.head
+		channel.head = nil
+		channel.headOk = false
 		return tmp
 	}
 	v := <-channel.channel
