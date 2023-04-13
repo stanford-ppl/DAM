@@ -22,8 +22,8 @@ type InputTag[D any, U any] struct {
 type OutputTagPublisher[D any, U any] interface {
 	// Writes a value of U to OutputChannel
 	// Can depend on the current state of the node
-	Publish(state interface{}) U
-	HasPublish(state interface{}) bool
+	Publish(state any) U
+	HasPublish(state any) bool
 }
 
 type OutputTag[D any, U any] struct {

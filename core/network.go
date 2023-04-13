@@ -28,9 +28,9 @@ type ChannelElement struct {
 }
 
 func MakeElement(time *big.Int, data datatypes.DAMType) ChannelElement {
-	cE := ChannelElement{Data: data}
-	cE.Time.Set(time)
-	return cE
+	ce := ChannelElement{Data: data}
+	ce.Time.Set(time)
+	return ce
 }
 
 func MakeChannel[T datatypes.DAMType](channelSize uint) *DAMChannel {
@@ -38,11 +38,10 @@ func MakeChannel[T datatypes.DAMType](channelSize uint) *DAMChannel {
 }
 
 func (channel *DAMChannel) Peek() ChannelElement {
-	if channel.head != nil {
-		return *channel.head
+	if channel.head == nil {
+		tmp := <-channel.channel
+		channel.head = &tmp
 	}
-	tmp := <-channel.channel
-	channel.head = &tmp
 	return *channel.head
 }
 

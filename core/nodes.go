@@ -9,6 +9,8 @@ import (
 )
 
 type Node struct {
+	portCount int
+
 	ID        int
 	TickCount big.Int
 
@@ -20,13 +22,14 @@ type Node struct {
 	InputTags  map[int]InputTag[datatypes.DAMType, datatypes.DAMType]
 	OutputTags map[int]OutputTag[datatypes.DAMType, datatypes.DAMType]
 
-	State interface{}
+	State any
 
 	Step func(node *Node, ffTime *big.Int) *big.Int
 }
 
 func NewNode() Node {
 	n := Node{}
+	n.portCount = 0
 	n.ID = -1
 	n.InputChannels = map[int]*DAMChannel{}
 	n.OutputChannels = map[int]*DAMChannel{}
@@ -34,6 +37,12 @@ func NewNode() Node {
 	n.OutputTags = map[int]OutputTag[datatypes.DAMType, datatypes.DAMType]{}
 	n.TickCount.SetInt64(0)
 	return n
+}
+
+func (node *Node) GetNextPortNum() int {
+	portNum := node.portCount
+	node.portCount++
+	return portNum
 }
 
 func (node *Node) SetID(id int) {
@@ -82,12 +91,12 @@ func (node *Node) Validate() bool {
 		if port != tag.OutputPort.ID {
 			return false
 		}
-
 		_, hasChannel := node.OutputChannels[port]
 		if !hasChannel {
 			return false
 		}
 	}
+
 	return true
 }
 
