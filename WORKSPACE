@@ -28,8 +28,28 @@ go_register_toolchains(version = "1.19.3")
 # Declare Go direct dependencies.
 go_repository(
     name = "org_golang_x_exp",
+    commit = "db074128a8ec7a8f3c962aa7a131dba993519cf2",
     importpath = "golang.org/x/exp",
-    commit = "db074128a8ec7a8f3c962aa7a131dba993519cf2"
 )
 
 gazelle_dependencies()
+
+# Eigen BLAS library used by ADMM
+http_archive(
+    name = "eigen",
+    build_file_content =
+        """
+cc_library(
+    name = 'eigen',
+    srcs = [],
+    includes = ['.'],
+    hdrs = glob(['Eigen/**']),
+    visibility = ['//visibility:public'],
+)
+""",
+    sha256 = "b4c198460eba6f28d34894e3a5710998818515104d6e74e5cc331ce31e46e626",
+    strip_prefix = "eigen-3.4.0",
+    urls = [
+        "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.bz2",
+    ],
+)

@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
+go_test(
+    name = "admm_test",
+    srcs = [
+        "admm_test.go",
+    ],
+    cdeps = ["//apps/admm/optimizer:optimizer"],
+    cgo = True,
+    deps = [
+        "//core",
+        "//datatypes",
+        "//networks",
+        "//utils",
+    ],
+)
