@@ -1,8 +1,0 @@
-cc_library(
-    name = "optimizer",
-    srcs = [
-        "opt.cc",
-    ],
-    visibility = ["//apps/admm:__pkg__"],
-    deps = ["@eigen"],
-)
