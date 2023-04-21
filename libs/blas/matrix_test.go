@@ -28,16 +28,16 @@ func TestMatrix(t *testing.T) {
 
 		fmt.Printf("rows = %d, cols = %d, i = %d, j = %d\n", rows, cols, i, j)
 		mat := AllocMatrix(rows, cols)
-		if mat == nil {
+		if mat.c_ptr == nil {
 			t.Errorf("Fail: alloc returned null pointer")
 		}
 
-		SetMatrixVal(mat, i, j, val)
-		val_ret := GetMatrixVal(mat, i, j)
+		mat.Set(i, j, val)
+		val_ret := mat.Get(i, j)
 		if val_ret != val {
 			t.Logf("Fail: return value different from input")
 		}
 
-		FreeMatrix(mat)
+		mat.Free()
 	}
 }

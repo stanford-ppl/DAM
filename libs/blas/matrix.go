@@ -3,40 +3,42 @@ package blas
 import "unsafe"
 
 /*
-	extern void *alloc_matrix(unsigned int rows, unsigned int cols);
-	extern void set_matrix_val(void *m, unsigned int rows, unsigned int cols, double val);
-	extern double get_matrix_val(void *m, unsigned int rows, unsigned int cols);
+	extern void *alloc_matrix(unsigned long rows, unsigned long cols);
+	extern void set_matrix_val(void *m, unsigned long rows, unsigned long cols, double val);
+	extern double get_matrix_val(void *m, unsigned long rows, unsigned long cols);
 	extern void free_matrix(void *m);
 */
 import "C"
 
+// Corresponds to MatrixXd in Eigen
 type Matrix struct {
-	rows  uint64
-	cols  uint64
+	rows  C.ulong
+	cols  C.ulong
 	c_ptr unsafe.Pointer
 }
 
-func AllocMatrix(rows, cols uint) unsafe.Pointer {
-	crows := C.uint(rows)
-	ccols := C.uint(cols)
-	mat := C.alloc_matrix(crows, ccols)
+func AllocMatrix(rows, cols uint) Matrix {
+	crows := C.ulong(rows)
+	ccols := C.ulong(cols)
+	ptr := C.alloc_matrix(crows, ccols)
+	mat := Matrix{crows, ccols, ptr}
 	return mat
 }
 
-func FreeMatrix(m unsafe.Pointer) {
-	C.free_matrix(m)
+func (m *Matrix) Free() {
+	C.free_matrix(m.c_ptr)
 }
 
-func SetMatrixVal(mat unsafe.Pointer, rows, cols uint, val float64) {
-	crows := C.uint(rows)
-	ccols := C.uint(cols)
+func (m *Matrix) Set(rows, cols uint, val float64) {
+	crows := C.ulong(rows)
+	ccols := C.ulong(cols)
 	cval := C.double(val)
-	C.set_matrix_val(mat, crows, ccols, cval)
+	C.set_matrix_val(m.c_ptr, crows, ccols, cval)
 }
 
-func GetMatrixVal(mat unsafe.Pointer, rows, cols uint) float64 {
-	crows := C.uint(rows)
-	ccols := C.uint(cols)
-	cval := C.get_matrix_val(mat, crows, ccols)
+func (m *Matrix) Get(rows, cols uint) float64 {
+	crows := C.ulong(rows)
+	ccols := C.ulong(cols)
+	cval := C.get_matrix_val(m.c_ptr, crows, ccols)
 	return float64(cval)
 }
