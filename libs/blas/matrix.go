@@ -42,3 +42,7 @@ func (m *Matrix) Get(rows, cols uint) float64 {
 	cval := C.get_matrix_val(m.c_ptr, crows, ccols)
 	return float64(cval)
 }
+
+func (m *Matrix) Rows() uint { return uint(m.rows) }
+
+func (m *Matrix) Cols() uint { return uint(m.cols) }

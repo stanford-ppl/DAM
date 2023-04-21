@@ -28,7 +28,7 @@ func TestMatrix(t *testing.T) {
 
 		fmt.Printf("rows = %d, cols = %d, i = %d, j = %d\n", rows, cols, i, j)
 		mat := AllocMatrix(rows, cols)
-		if mat.c_ptr == nil {
+		if mat.c_ptr == nil || mat.Rows() != rows || mat.Cols() != cols {
 			t.Errorf("Fail: alloc returned null pointer")
 		}
 
