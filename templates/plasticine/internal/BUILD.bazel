@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "internal",
@@ -13,5 +13,15 @@ go_library(
         "//datatypes",
         "//utils",
         "@imath//ix",
+    ],
+)
+
+go_test(
+    name = "internal_test",
+    srcs = ["PMU_internals_test.go"],
+    embed = [":internal"],
+    deps = [
+        "//core",
+        "//utils",
     ],
 )
