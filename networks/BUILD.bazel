@@ -1,9 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "networks",
-    srcs = ["ideal.go"],
-    importpath = "github.com/stanford-ppl/DAM/networks",
-    visibility = ["//visibility:public"],
-    deps = ["//core"],
-)

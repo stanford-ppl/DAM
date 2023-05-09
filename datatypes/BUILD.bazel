@@ -7,6 +7,7 @@ go_library(
         "base.go",
         "fixed.go",
         "vector.go",
+        "wrapper_types.go",
     ],
     importpath = "github.com/stanford-ppl/DAM/datatypes",
     visibility = ["//visibility:public"],

@@ -3,13 +3,10 @@ package functional_test
 import (
 	"math"
 	"math/big"
-	"sync"
 	"testing"
 
 	"github.com/stanford-ppl/DAM/core"
 	"github.com/stanford-ppl/DAM/datatypes"
-	"github.com/stanford-ppl/DAM/networks"
-	"github.com/stanford-ppl/DAM/utils"
 )
 
 // This test runs a Matrix-Vector (M x N) x (N) product
@@ -23,15 +20,13 @@ func TestNetworkWithBigStep(t *testing.T) {
 
 	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
 
-	channelSize := uint(8)
+	channelSize := 8
 
 	// We have three nodes -- a matrix producer, a vector producer, and a dot product unit.
 
-	matToDot := core.MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](channelSize)
+	matToDot := core.MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](timePerVecInMatrix + 1)
 	vecToDot := core.MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](channelSize)
-	dotOutput := core.MakeCommunicationChannel[datatypes.FixedPoint](uint(M))
-
-	network := networks.IdealNetwork{}
+	dotOutput := core.MakeCommunicationChannel[datatypes.FixedPoint](M)
 
 	ctx := core.MakePrimitiveContext(nil)
 
@@ -43,8 +38,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 				val.SetInt(big.NewInt(int64(i)))
 				result.Set(i, val)
 			}
-			node.OutputChannels[0].Enqueue(core.MakeElement(node.TickCount(), result))
-			node.IncrCycles(1)
+			node.OutputChannel(0).Enqueue(core.MakeChannelElement(node.TickLowerBound(), result))
 		},
 	}
 	vecProducer.AddOutputChannel(vecToDot)
@@ -57,11 +51,15 @@ func TestNetworkWithBigStep(t *testing.T) {
 				for i := 0; i < N; i++ {
 					val := datatypes.FixedPoint{Tp: fpt}
 					val.SetInt(big.NewInt(int64(i + j)))
-					t.Logf("Mat[%d, %d] = %d", j, i, val.ToInt().Int64())
+					// t.Logf("Mat[%d, %d] = %d", j, i, val.ToInt().Int64())
 					result.Set(i, val)
 				}
-				node.OutputChannels[0].Enqueue(core.MakeElement(node.TickCount(), result))
-				node.IncrCycles(int64(timePerVecInMatrix))
+				// Lower bound on when we can tick again
+				nextTick := node.TickLowerBound()
+				nextTick.Add(nextTick, core.NewTime(int64(timePerVecInMatrix)))
+				core.AdvanceUntilCanEnqueue(node, 0)
+				node.OutputChannel(0).Enqueue(core.MakeChannelElement(node.TickLowerBound(), result))
+				node.AdvanceToTime(nextTick)
 			}
 		},
 	}
@@ -75,26 +73,17 @@ func TestNetworkWithBigStep(t *testing.T) {
 	dotProduct := core.SimpleNode[MatVecState]{
 		RunFunc: func(node *core.SimpleNode[MatVecState]) {
 			for j := 0; j < M; j++ {
-				matChannel := node.InputChannels[0]
-				vecChannel := node.InputChannels[1]
 
-				tick := big.NewInt(0)
+				tick := core.NewTime(0)
 				if !node.State.HasInitialized {
 					t.Log("Initializing Vector")
 					node.State.HasInitialized = true
-					timeDelta := new(big.Int)
-					vec, _ := vecChannel.Dequeue()
-					chanTime := vec.Time
+					tmp := core.DequeueInputChannels(node, 0)
+					vec := tmp[0]
 					node.State.Vector = vec.Data.(datatypes.Vector[datatypes.FixedPoint])
-					timeDelta.Sub(&chanTime, node.TickCount())
-					utils.Max[*big.Int](timeDelta, tick, tick)
 				}
-				matInput, _ := matChannel.Dequeue()
-				timeDelta := new(big.Int)
-				timeDelta.Sub(&matInput.Time, node.TickCount())
-				utils.Max[*big.Int](timeDelta, tick, tick)
-
-				matVec := matInput.Data.(datatypes.Vector[datatypes.FixedPoint])
+				tmp := core.DequeueInputChannels(node, 1)
+				matVec := tmp[0].Data.(datatypes.Vector[datatypes.FixedPoint])
 
 				// Now compute the dot product of matVec and state.Vector
 				t.Logf("Computing Dot Product")
@@ -106,48 +95,45 @@ func TestNetworkWithBigStep(t *testing.T) {
 					sum = datatypes.FixedAdd(sum, mul)
 				}
 
-				outputTime := big.NewInt(int64(dotTime))
-				outputTime.Add(node.TickCount(), tick)
-				t.Logf("Enqueuing result %d (simulated time %d)", sum.ToInt().Int64(), outputTime.Int64())
-				node.OutputChannels[0].Enqueue(core.MakeElement(outputTime, sum))
-				node.IncrCyclesBigInt(tick)
+				outputTime := core.NewTime(int64(dotTime))
+				outputTime.Add(node.TickLowerBound(), tick)
+				core.AdvanceUntilCanEnqueue(node, 0)
+				t.Logf("Enqueuing result %d (simulated time %v)", j, outputTime)
+				node.OutputChannel(0).Enqueue(core.MakeChannelElement(outputTime, sum))
+				node.IncrCycles(tick)
 			}
+			t.Logf("Dot Product Finished")
 		},
 	}
-	dotProduct.AddInputChannel(matToDot)
 	dotProduct.AddInputChannel(vecToDot)
+	dotProduct.AddInputChannel(matToDot)
 	dotProduct.AddOutputChannel(dotOutput)
 	ctx.AddChild(&dotProduct)
 
-	network.Initialize([]core.CommunicationChannel{matToDot, vecToDot, dotOutput})
-
-	var wg sync.WaitGroup
-	wg.Add(3) // Checker, Network, Context
-
-	// checker
-	go (func() {
-		for i := 0; i < M; i++ {
-			recv, _ := dotOutput.InputChannel.Dequeue()
-			recvVal := recv.Data.(datatypes.FixedPoint).ToInt().Int64()
-			// The reference value for element i is Sum(a * (a + i) for a in range(N))
-			var refVal int = 0
-			for tmp := 0; tmp < N; tmp++ {
-				refVal += tmp * (tmp + i)
+	checker := core.SimpleNode[any]{
+		RunFunc: func(node *core.SimpleNode[any]) {
+			for i := 0; i < M; i++ {
+				recv := core.DequeueInputChannels(node, 0)[0]
+				t.Logf("Checking iteration %d", i)
+				t.Logf("Received: %v", recv.Status)
+				recvVal := recv.Data.(datatypes.FixedPoint).ToInt().Int64()
+				// The reference value for element i is Sum(a * (a + i) for a in range(N))
+				var refVal int = 0
+				for tmp := 0; tmp < N; tmp++ {
+					refVal += tmp * (tmp + i)
+				}
+				if recvVal != int64(refVal) {
+					t.Errorf("Error at element %d, %d != %d", i, recvVal, refVal)
+				}
 			}
-			if recvVal != int64(refVal) {
-				t.Errorf("Error at element %d, %d != %d", i, recvVal, refVal)
-			}
-		}
-		network.Kill()
-		wg.Done()
-	})()
+		},
+	}
+	checker.AddInputChannel(dotOutput)
+	ctx.AddChild(&checker)
 
-	go (func() { ctx.Init(); ctx.Run(); wg.Done() })()
-	go (func() { network.Run(); wg.Done() })()
-
-	wg.Wait()
-
-	t.Logf("Matrix Producer finished at %d", matProducer.TickCount().Int64())
-	t.Logf("Dot Product finished at %d", dotProduct.TickCount().Int64())
+	ctx.Init()
+	ctx.Run()
+	t.Logf("Matrix Producer finished at %v", matProducer.TickLowerBound())
+	t.Logf("Dot Product finished at %v", dotProduct.TickLowerBound())
 	t.Logf("Dot product delay is %d", dotTime)
 }

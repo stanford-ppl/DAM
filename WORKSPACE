@@ -32,6 +32,12 @@ go_repository(
     importpath = "golang.org/x/exp",
 )
 
+go_repository(
+    name = "imath",
+    importpath = "github.com/adam-lavrik/go-imath",
+    commit = "265a42a96f0b0ce24ea83d8aa4f0a51d7231dc8f"
+)
+
 gazelle_dependencies()
 
 # Eigen BLAS library used by ADMM

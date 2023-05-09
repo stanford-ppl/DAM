@@ -5,8 +5,10 @@ go_library(
     srcs = [
         "context.go",
         "network.go",
+        "node_utils.go",
         "nodes.go",
         "tag.go",
+        "time.go",
     ],
     importpath = "github.com/stanford-ppl/DAM/core",
     visibility = ["//visibility:public"],
@@ -21,9 +23,5 @@ go_test(
     size = "small",
     srcs = ["core_test.go"],
     embed = [":core"],
-    deps = [
-        "//datatypes",
-        "//utils",
-        "@org_golang_x_exp//maps",
-    ],
+    deps = ["//datatypes"],
 )

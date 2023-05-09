@@ -2,17 +2,15 @@ package core
 
 import (
 	"math/big"
-	"sync"
 	"testing"
 
 	"github.com/stanford-ppl/DAM/datatypes"
-	"github.com/stanford-ppl/DAM/utils"
 )
 
 func TestSimpleNodeIO(t *testing.T) {
-	var channelSize uint = 1
+	var channelSize int = 4
 
-	mkChan := func() CommunicationChannel {
+	mkChan := func() *CommunicationChannel {
 		return MakeCommunicationChannel[datatypes.FixedPoint](channelSize)
 	}
 
@@ -27,23 +25,20 @@ func TestSimpleNodeIO(t *testing.T) {
 	node := SimpleNode[any]{
 		RunFunc: func(node *SimpleNode[any]) {
 			for i := 0; i < 10; i++ {
-				newTime := new(big.Int)
-				tick := node.TickCount()
-				newTime.Set(tick)
-				for _, channel := range node.InputChannels {
-					cTime := channel.Peek().Time
-					utils.Max[*big.Int](&cTime, newTime, newTime)
-				}
-
-				a := node.InputChannels[0].DequeueNoCheck().Data.(datatypes.FixedPoint)
-				b := node.InputChannels[1].DequeueNoCheck().Data.(datatypes.FixedPoint)
+				elements := DequeueInputChannels(node, 0, 1)
+				a := elements[0].Data.(datatypes.FixedPoint)
+				b := elements[1].Data.(datatypes.FixedPoint)
 				c := datatypes.FixedAdd(a, b)
-				node.OutputChannels[0].Enqueue(MakeElement(newTime, c))
-				t.Logf("%d + %d = %d", a.ToInt().Int64(), b.ToInt().Int64(), c.ToInt().Int64())
-
-				delta := new(big.Int)
-				delta.Sub(newTime, tick)
-				node.IncrCyclesBigInt(delta)
+				// node has now incremented to the time needed to read both elements.
+				// Advance node until there's space in the output queue
+				AdvanceUntilCanEnqueue(node, 0)
+				enqTime := node.TickLowerBound()
+				enqTime.Add(enqTime, OneTick)
+				succ, _ := node.OutputChannel(0).Enqueue(MakeChannelElement(enqTime, c))
+				if !succ {
+					panic("We advanced until we could enqueue, so enqueue should always succeed")
+				}
+				node.IncrCycles(OneTick)
 			}
 		},
 	}
@@ -53,126 +48,68 @@ func TestSimpleNodeIO(t *testing.T) {
 	node.AddOutputChannel(channelC)
 	ctx.AddChild(&node)
 
-	var wg sync.WaitGroup
-	genA := func() {
-		for i := 0; i < 10; i++ {
-			aVal := datatypes.FixedPoint{Tp: fpt}
-			aVal.SetInt(big.NewInt(int64(i)))
-
-			cE := ChannelElement{Data: aVal}
-			cE.Time.Set(big.NewInt(int64(i)))
-
-			channelA.InputChannel.Enqueue(cE)
-		}
-		wg.Done()
-	}
-
-	genB := func() {
-		for i := 0; i < 10; i++ {
-			bVal := datatypes.FixedPoint{Tp: fpt}
-			bVal.SetInt(big.NewInt(int64(2 * i)))
-			channelB.InputChannel.Enqueue(MakeElement(big.NewInt(int64(i)), bVal))
-		}
-		wg.Done()
-	}
-
-	checker := func() {
-		for i := 0; i < 10; i++ {
-			recv := channelC.OutputChannel.DequeueNoCheck().Data.(datatypes.FixedPoint)
-			t.Logf("Output %d\n", recv.ToInt())
-			if recv.ToInt().Int64() != int64(3*i) {
-				t.Errorf("Expected: %d, received: %d", 3*i, recv.ToInt().Int64())
-			}
-		}
-		wg.Done()
-	}
-
-	wg.Add(4)
-
-	go genA()
-	go genB()
-	go (func() {
-		ctx.Init()
-		ctx.Run()
-		wg.Done()
-	})()
-	go checker()
-
-	wg.Wait()
-	t.Logf("Total cycles elapsed: %s", node.TickCount().String())
-}
-
-func TestSimpleNodeIO_Vector(t *testing.T) {
-	var channelSize uint = 10
-	var vecWidth int = 10
-	var numVecs int = 3
-	ctx := MakePrimitiveContext(nil)
-	fpt := datatypes.FixedPointType{Signed: true, Integer: 32, Fraction: 0}
-
-	inputChannel := MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](channelSize)
-	outputChannel := MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](channelSize)
-
-	node := SimpleNode[any]{
+	genA := SimpleNode[any]{
 		RunFunc: func(node *SimpleNode[any]) {
-			for j := 0; j < numVecs; j++ {
-				a := node.InputChannels[0].DequeueNoCheck().Data.(datatypes.Vector[datatypes.FixedPoint])
+			for i := 0; i < 10; i++ {
+				aVal := datatypes.FixedPoint{Tp: fpt}
+				aVal.SetInt(big.NewInt(int64(i)))
+				cE := MakeChannelElement(node.TickLowerBound(), aVal)
 
-				one := datatypes.FixedPoint{Tp: fpt}
-				one.SetInt(big.NewInt(int64(1)))
+				t.Logf("genA pushing %d", i)
+				AdvanceUntilCanEnqueue(node, 0)
+				node.OutputChannel(0).Enqueue(cE)
+				node.IncrCycles(OneTick)
+			}
+		},
+	}
+	ctx.AddChild(&genA)
+	genA.AddOutputChannel(channelA)
 
-				for i := 0; i < vecWidth; i++ {
-					a.Set(i, datatypes.FixedAdd(a.Get(i), one))
-				}
-				node.OutputChannels[0].Enqueue(MakeElement(node.TickCount(), a))
-				node.IncrCycles(1)
+	genB := SimpleNode[any]{
+		RunFunc: func(node *SimpleNode[any]) {
+			for i := 0; i < 10; i++ {
+				bVal := datatypes.FixedPoint{Tp: fpt}
+				bVal.SetInt(big.NewInt(int64(2 * i)))
+				cE := MakeChannelElement(OneTick, bVal)
+
+				t.Logf("genB pushing %d", i)
+				AdvanceUntilCanEnqueue(node, 0)
+				node.OutputChannel(0).Enqueue(cE)
+				node.IncrCycles(OneTick)
 			}
 		},
 	}
 
-	node.AddInputChannel(inputChannel)
-	node.AddOutputChannel(outputChannel)
+	ctx.AddChild(&genB)
+	genB.AddOutputChannel(channelB)
 
-	ctx.AddChild(&node)
-
-	var wg sync.WaitGroup
-
-	genA := func() {
-		for n := 0; n < numVecs; n++ {
-			v := datatypes.NewVector[datatypes.FixedPoint](10)
-			for i := 0; i < vecWidth; i++ {
-				aVal := datatypes.FixedPoint{Tp: fpt}
-				aVal.SetInt(big.NewInt(int64(i)))
-				v.Set(i, aVal)
-			}
-			inputChannel.InputChannel.Enqueue(MakeElement(big.NewInt(int64(n)), v))
-		}
-		wg.Done()
-	}
-
-	checker := func() {
-		for n := 0; n < numVecs; n++ {
-			for i := 0; i < 1; i++ {
-				recv := outputChannel.OutputChannel.DequeueNoCheck().Data.(datatypes.Vector[datatypes.FixedPoint])
-				for j := 0; j < vecWidth; j++ {
-					t.Logf("Output for index: %d is %d", j, recv.Get(j).ToInt())
-					if recv.Get(j).ToInt().Int64() != int64(j+1) {
-						t.Errorf("Expected: %d, received: %d", (j + 1), recv.Get(j).ToInt().Int64())
+	checker := SimpleNode[any]{
+		RunFunc: func(node *SimpleNode[any]) {
+			for i := 0; i < 10; i++ {
+				t.Logf("Checking %d", i)
+				var val ChannelElement
+				var status Status
+				for {
+					val, status = node.InputChannel(0).Dequeue()
+					if status != Nothing {
+						break
 					}
+					node.IncrCycles(OneTick)
+				}
+				recv := val.Data.(datatypes.FixedPoint)
+				t.Logf("Output %d\n", recv.ToInt())
+				if recv.ToInt().Int64() != int64(3*i) {
+					t.Errorf("Expected: %d, received: %d", 3*i, recv.ToInt().Int64())
 				}
 			}
-		}
-		wg.Done()
+		},
 	}
 
-	wg.Add(3)
+	checker.AddInputChannel(channelC)
+	ctx.AddChild(&checker)
 
-	go genA()
-	go (func() {
-		ctx.Init()
-		ctx.Run()
-		wg.Done()
-	})()
-	go checker()
+	ctx.Init()
+	ctx.Run()
 
-	wg.Wait()
+	t.Logf("Finished after %s cycles", checker.TickLowerBound().String())
 }

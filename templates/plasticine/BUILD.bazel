@@ -1,10 +1,22 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "plasticine",
     srcs = ["PMU.go"],
     importpath = "github.com/stanford-ppl/DAM/templates/plasticine",
     visibility = ["//visibility:public"],
+    deps = [
+        "//core",
+        "//datatypes",
+        "//templates/plasticine/internal",
+        "//utils",
+    ],
+)
+
+go_test(
+    name = "plasticine_test",
+    srcs = ["plasticine_test.go"],
+    embed = [":plasticine"],
     deps = [
         "//core",
         "//datatypes",

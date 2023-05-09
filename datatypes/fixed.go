@@ -109,6 +109,10 @@ func (fp *FixedPoint) SetInt(integer *big.Int) {
 	}
 }
 
+func (fp *FixedPoint) SetInt64(i int64) {
+	fp.SetInt(big.NewInt(i))
+}
+
 func (fp *FixedPoint) SetFloat(float *big.Float) {
 	if !fp.Tp.Signed && float.Signbit() {
 		panic("Attempting to convert a negative float to an unsigned FixedPoint")

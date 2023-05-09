@@ -31,5 +31,6 @@
     "go.buildOnSave": "workspace",
     "go.lintOnSave": "off",
     "go.vetOnSave": "off",
-    "go.testFlags": ["-v"],
+    "go.testFlags": ["-v", "-count=1"],
+    "go.testTimeout": "5s"
   }

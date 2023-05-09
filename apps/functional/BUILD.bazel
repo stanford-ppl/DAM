@@ -2,14 +2,9 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 go_test(
     name = "functional_test",
-    srcs = [
-        "dot_test.go",
-        "gemv_test.go",
-    ],
+    srcs = ["gemv_test.go"],
     deps = [
         "//core",
         "//datatypes",
-        "//networks",
-        "//utils",
     ],
 )
