@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "hogmild",
+    srcs = [
+        "hogmild.go",
+    ],
+    importpath = "github.com/stanford-ppl/DAM",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//core",
+        "//libs/blas",
+    ],
+)

@@ -1,7 +1,6 @@
 package blas
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 )
@@ -26,7 +25,6 @@ func TestMatrix(t *testing.T) {
 		var i, j uint = randIdx(rows), randIdx(cols)
 		var val float64 = rand.Float64()
 
-		fmt.Printf("rows = %d, cols = %d, i = %d, j = %d\n", rows, cols, i, j)
 		mat := AllocMatrix(rows, cols)
 		if mat.c_ptr == nil || mat.Rows() != rows || mat.Cols() != cols {
 			t.Errorf("Fail: alloc returned null pointer")
