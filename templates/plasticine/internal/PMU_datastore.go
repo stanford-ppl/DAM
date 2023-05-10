@@ -49,12 +49,7 @@ func (pmu *PMUDataStore[T]) HandleWrite(addr datatypes.DAMType, enable utils.Opt
 	if isVec {
 		width = dataVec.Width()
 	}
-	fmt.Println("Enable Width:", width)
 	enables := broadcastEnable(enable, width)
-
-	fmt.Printf("Handling Write: %+v (type = %T)\n", writeInfo, writeInfo.Type)
-	fmt.Println("Enables:", enables)
-	fmt.Printf("Writing %+v to %+v\n", data, addr)
 	switch writeInfo.Type.(type) {
 	case Scalar:
 		if !enables[0] {
@@ -175,7 +170,6 @@ func (pmu *PMUDataStore[T]) mapAndCheckIndex(index int64) int64 {
 }
 
 func (pmu *PMUDataStore[T]) Write(index int64, value T, time *core.Time) {
-	fmt.Println("Writing", value, "to", index, "at time", time.String())
 	pmu.dataStore[pmu.mapAndCheckIndex(index)].AddEntry(value, time)
 }
 

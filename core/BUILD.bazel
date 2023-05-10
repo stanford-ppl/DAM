@@ -4,6 +4,7 @@ go_library(
     name = "core",
     srcs = [
         "context.go",
+        "logging.go",
         "network.go",
         "node_utils.go",
         "nodes.go",
@@ -15,6 +16,7 @@ go_library(
     deps = [
         "//datatypes",
         "//utils",
+        "@org_uber_go_zap//:zap",
     ],
 )
 

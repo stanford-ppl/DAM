@@ -38,7 +38,7 @@ func (llio *LowLevelIO) InitWithCtx(ctx ContextView) {
 	}
 }
 
-func (llio *LowLevelIO) String() string {
+func (llio *LowLevelIO) ConnectionString() string {
 	inputStrings := utils.Map(llio.inputChannels, func(chn *CommunicationChannel) string {
 		return fmt.Sprintf("%#v", chn.srcCtx)
 	})
@@ -149,21 +149,11 @@ func (prim *TickTime) Cleanup() {
 }
 
 type PrimitiveNode[T any] struct {
+	HasParent
 	id int
 
 	State *T
 	// TODO: Tags
-
-	parent ParentContext
-}
-
-func (prim *PrimitiveNode[T]) SetParent(parent ParentContext) {
-	prim.parent = parent
-	prim.id = parent.GetNewChildID()
-}
-
-func (prim *PrimitiveNode[T]) GetID() int {
-	return prim.id
 }
 
 type LLIOWithTime struct {
@@ -180,8 +170,6 @@ func (lliowt *LLIOWithTime) Cleanup() {
 	lliowt.TickTime.Cleanup()
 	lliowt.LowLevelIO.Cleanup()
 }
-
-func (prim *PrimitiveNode[T]) ParentContext() ParentContext { return prim.parent }
 
 type SimpleNode[T any] struct {
 	PrimitiveNodeWithIO[T]

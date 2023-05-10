@@ -1,5 +1,7 @@
 package core
 
+import "fmt"
+
 type CEWithStatus struct {
 	ChannelElement
 	Status
@@ -63,5 +65,24 @@ func AdvanceUntilCanEnqueue(node EnqOutputChans, chanIndices ...int) {
 				break
 			}
 		}
+	}
+}
+
+type HasID interface {
+	GetID() int
+}
+
+func CtxToString(ctx Context) string {
+	var parentString string
+	if ctx.ParentContext() != nil {
+		parentString = CtxToString(ctx.ParentContext()) + "."
+	}
+	switch context := ctx.(type) {
+	case fmt.Stringer:
+		return fmt.Sprintf("%s%s", parentString, context.String())
+	case HasID:
+		return fmt.Sprintf("%s%T(id=%d)", parentString, ctx, context.GetID())
+	default:
+		return fmt.Sprintf("%s%T(%p)", parentString, ctx, &ctx)
 	}
 }

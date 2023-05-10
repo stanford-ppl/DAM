@@ -46,6 +46,10 @@ type PMUReadEntry struct {
 	Time      core.Time
 }
 
+func (rentry *PMUReadEntry) String() string {
+	return fmt.Sprintf("Read(%v) @ %v", rentry.AddrValue, &rentry.Time)
+}
+
 // Write:
 // Addr Stream (scalar or vector)
 // Data Stream (scalar or vector)
@@ -120,13 +124,12 @@ func broadcastEnable(enable utils.Option[datatypes.DAMType], width int) (result 
 
 type PMU[T datatypes.DAMType] struct {
 	core.ChildIDManager
+	core.HasParent
 
 	datastore PMUDataStore[T]
 	reader    PMUReadPipeline[T]
 	writer    PMUWritePipeline[T]
 	latency   int64
-
-	parent core.ParentContext
 }
 
 var (
@@ -174,16 +177,16 @@ func (pmu *PMU[T]) BlockUntil(time *core.Time) <-chan *core.Time {
 func (pmu *PMU[T]) Cleanup() {
 }
 
+func (*PMU[T]) String() string {
+	return fmt.Sprintf("PMU[%s]", utils.TypeString[T]())
+}
+
 func (pmu *PMU[T]) Init() {
 	pmu.reader.Init()
 	pmu.writer.Init()
 	pmu.reader.SetParent(pmu)
 	pmu.writer.SetParent(pmu)
 	pmu.datastore.Init()
-}
-
-func (pmu *PMU[T]) ParentContext() core.ParentContext {
-	return pmu.parent
 }
 
 func (pmu *PMU[T]) Run() {
@@ -210,10 +213,6 @@ func (pmuReadPipeline *PMUReadPipeline[T]) makeReadPacket(read PMURead) (packet 
 	return packet
 }
 
-func (pmu *PMU[T]) SetParent(parent core.ParentContext) {
-	pmu.parent = parent
-}
-
 func (pmu *PMU[T]) AddWriter(addr *core.CommunicationChannel, data *core.CommunicationChannel,
 	enable utils.Option[*core.CommunicationChannel], ack []*core.CommunicationChannel, tp AccessType,
 ) {
@@ -238,6 +237,10 @@ func (rp *PMUReadPipeline[T]) ParentContext() core.ParentContext {
 
 func (rp *PMUReadPipeline[T]) SetParent(p core.ParentContext) {
 	rp.parent = p.(*PMU[T])
+}
+
+func (rp *PMUReadPipeline[T]) String() string {
+	return fmt.Sprintf("ReadPipeline[%s]", utils.TypeString[T]())
 }
 
 func (rp *PMUReadPipeline[T]) Init() {
@@ -269,10 +272,9 @@ func (pmu *PMUReadPipeline[T]) readTick() bool {
 		})
 		if canWrite {
 			// Fetch result now
-			fmt.Printf("Reading: %+v\n", pmu.readBacklog)
+			core.GetLogger(pmu).Sugar().Infof("Reading: %+v", pmu.readBacklog)
 			// Wait for the write side to catch up
 			<-pmu.parent.writer.BlockUntil(&pmu.readBacklog.Time)
-			fmt.Printf("Done Blocking %s\n", pmu.parent.writer.TickLowerBound())
 			values := pmu.parent.datastore.HandleRead(pmu.readBacklog.AddrValue, pmu.readBacklog.PMURead, &pmu.readBacklog.Time)
 			for _, v := range channels {
 				v.Enqueue(core.MakeChannelElement(pmu.TickLowerBound(), values))
@@ -298,12 +300,12 @@ func (pmu *PMUReadPipeline[T]) readTick() bool {
 	if utils.IsEmpty(livePackets) {
 		return false
 	}
-	fmt.Println("Live Packets Read")
-	for _, p := range livePackets {
-		fmt.Println("Read", p.String())
-	}
+	// fmt.Println("Live Packets Read")
+	// for _, p := range livePackets {
+	// 	fmt.Println("Read", p.String())
+	// }
 	firstPacket := utils.MinElem(livePackets, PktLT[PMURead])
-	fmt.Println("Selected Read", firstPacket.String())
+	// fmt.Println("Selected Read", firstPacket.String())
 	readData := firstPacket.Data
 	// Skip forward to the packet's time
 	addrChan := pmu.InputChannel(readData.Addr)
@@ -313,7 +315,7 @@ func (pmu *PMUReadPipeline[T]) readTick() bool {
 		pmu.IncrCycles(core.OneTick)
 		return true
 	}
-	fmt.Println("Addr:", addr.Time.String(), fmt.Sprintf("%T %#v", addr.Data, addr.Data), "Status:", addrStatus)
+	// fmt.Println("Addr:", addr.Time.String(), fmt.Sprintf("%T %#v", addr.Data, addr.Data), "Status:", addrStatus)
 
 	extendedRead := new(PMUReadEntry)
 	extendedRead.PMURead = readData
@@ -343,6 +345,10 @@ func (wp *PMUWritePipeline[T]) ParentContext() core.ParentContext {
 
 func (wp *PMUWritePipeline[T]) SetParent(p core.ParentContext) {
 	wp.parent = p.(*PMU[T])
+}
+
+func (wp *PMUWritePipeline[T]) String() string {
+	return fmt.Sprintf("WritePipeline[%s]", utils.TypeString[T]())
 }
 
 func (wp *PMUWritePipeline[T]) Init() {
@@ -408,10 +414,10 @@ func (pmuWriter *PMUWritePipeline[T]) writeTick() bool {
 	if utils.IsEmpty(livePackets) {
 		return false
 	}
-	fmt.Println("Live Packets Write")
-	for _, p := range livePackets {
-		fmt.Println("Write", p.Status, p.Time.String(), p.Data)
-	}
+	// fmt.Println("Live Packets Write")
+	// for _, p := range livePackets {
+	// 	fmt.Println("Write", p.Status, p.Time.String(), p.Data)
+	// }
 	firstPacket := utils.MinElem(livePackets, PktLT[PMUWrite])
 	if firstPacket.Status == core.Nothing {
 		pmuWriter.AdvanceToTime(&firstPacket.Time)
@@ -425,12 +431,12 @@ func (pmuWriter *PMUWritePipeline[T]) writeTick() bool {
 	if writeData.Enable != -1 {
 		reads = append(reads, writeData.Enable)
 	}
-	fmt.Println("Dequeuing Writes:", reads)
+	// fmt.Println("Dequeuing Writes:", reads)
 	dequeuedData := core.DequeueInputChannels(pmuWriter, reads...)
-	fmt.Println("Write Data", dequeuedData)
+	// fmt.Println("Write Data", dequeuedData)
 	addr := dequeuedData[0]
 	data := dequeuedData[1]
-	fmt.Println("Addr:", addr.Data.(datatypes.FixedPoint).ToInt().Int64(), "Data:", data.Data)
+	// fmt.Println("Addr:", addr.Data.(datatypes.FixedPoint).ToInt().Int64(), "Data:", data.Data)
 	var enable utils.Option[datatypes.DAMType]
 	if writeData.Enable != -1 {
 		enable = utils.Some(dequeuedData[2].Data)

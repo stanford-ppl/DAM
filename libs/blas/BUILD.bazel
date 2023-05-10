@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "blas",
-    srcs = ["matrix.go"],
+    srcs = [
+        "matrix.cc",
+        "matrix.go",
+    ],
     cdeps = [":matrix_c"],
     cgo = True,
     importpath = "github.com/stanford-ppl/DAM/libs/blas",

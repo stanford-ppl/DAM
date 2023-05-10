@@ -6,6 +6,7 @@ go_library(
         "bigutils.go",
         "optional.go",
         "sliceutils.go",
+        "typeutils.go",
     ],
     importpath = "github.com/stanford-ppl/DAM/utils",
     visibility = ["//visibility:public"],
