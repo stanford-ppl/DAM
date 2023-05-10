@@ -3,7 +3,8 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/home/nzhang/eigen-3.4.0"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

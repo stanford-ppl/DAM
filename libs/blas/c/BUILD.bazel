@@ -1,8 +1,0 @@
-cc_library(
-    name = "blas",
-    srcs = [
-        "matrix.cc",
-    ],
-    visibility = ["//libs/blas:__pkg__"],
-    deps = ["@eigen"],
-)

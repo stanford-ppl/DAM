@@ -1,10 +1,12 @@
 {
     "go.goroot": "${workspaceFolder}/bazel-${workspaceFolderBasename}/external/go_sdk",
     "go.toolsEnvVars": {
-      "GOPACKAGESDRIVER": "${workspaceFolder}/tools/gopackagesdriver.sh"
+      "GOPACKAGESDRIVER": "${workspaceFolder}/tools/gopackagesdriver.sh",
+      "CGO_ENABLED": "1",
+      "CGO_CPPFLAGS":"-I ${workspaceFolder}/bazel-${workspaceFolderBasename}/external/eigen",
     },
     "go.enableCodeLens": {
-      "runtest": false
+      "runtest": true
     },
     "gopls": {
       "build.directoryFilters": [
@@ -19,8 +21,8 @@
       "ui.semanticTokens": true,
       "ui.codelenses": {
         "gc_details": false,
-        "regenerate_cgo": false,
-        "generate": false,
+        "regenerate_cgo": true,
+        "generate": true,
         "test": true,
         "tidy": false,
         "upgrade_dependency": false,

@@ -3,17 +3,25 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "blas",
     srcs = ["matrix.go"],
-    cdeps = ["//libs/blas/c:blas"],
+    cdeps = [":matrix_c"],
     cgo = True,
     importpath = "github.com/stanford-ppl/DAM/libs/blas",
     visibility = ["//visibility:public"],
 )
 
 go_test(
-    name = "matrix_test",
+    name = "blas_test",
     size = "small",
     timeout = "short",
     srcs = ["matrix_test.go"],
     embed = [":blas"],
 )
 
+cc_library(
+    name = "matrix_c",
+    srcs = [
+        "matrix.cc",
+    ],
+    visibility = ["//libs/blas:__pkg__"],
+    deps = ["@eigen"],
+)
