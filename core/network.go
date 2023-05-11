@@ -95,7 +95,7 @@ func (cchan *CommunicationChannel) CloseOutput() {
 	close(cchan.underlying)
 }
 
-func (cchan *CommunicationChannel) UpdateCapacity() {
+func (cchan *CommunicationChannel) updateLen() {
 	cchan.capacityMutex.Lock()
 	defer cchan.capacityMutex.Unlock()
 	updateTime := cchan.srcCtx.TickLowerBound()
@@ -146,7 +146,7 @@ func (cchan *CommunicationChannel) IsFull() bool {
 		return false
 	}
 	cchan.capacityMutex.RUnlock()
-	cchan.UpdateCapacity()
+	cchan.updateLen()
 	// Now that we've updated capacity, re-check
 	cchan.capacityMutex.RLock()
 	defer cchan.capacityMutex.RUnlock()
