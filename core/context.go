@@ -75,10 +75,9 @@ func (node *NoCleanup) Cleanup() {}
 type basicContext struct {
 	NoCleanup // We clean up our children after they finish running
 	ChildIDManager
-	localTimings sync.Map
-	children     []Context
-	parent       ParentContext
-	ID           int
+	children []Context
+	parent   ParentContext
+	ID       int
 }
 
 var (
