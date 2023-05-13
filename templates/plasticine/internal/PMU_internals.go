@@ -432,7 +432,7 @@ func (pmuWriter *PMUWritePipeline[T]) writeTick() bool {
 		reads = append(reads, writeData.Enable)
 	}
 	// fmt.Println("Dequeuing Writes:", reads)
-	dequeuedData := core.DequeueInputChannels(pmuWriter, reads...)
+	dequeuedData := core.DequeueInputChansByID(pmuWriter, reads...)
 	// fmt.Println("Write Data", dequeuedData)
 	addr := dequeuedData[0]
 	data := dequeuedData[1]

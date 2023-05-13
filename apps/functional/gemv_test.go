@@ -78,11 +78,11 @@ func TestNetworkWithBigStep(t *testing.T) {
 				if !node.State.HasInitialized {
 					t.Log("Initializing Vector")
 					node.State.HasInitialized = true
-					tmp := core.DequeueInputChannels(node, 0)
+					tmp := core.DequeueInputChansByID(node, 0)
 					vec := tmp[0]
 					node.State.Vector = vec.Data.(datatypes.Vector[datatypes.FixedPoint])
 				}
-				tmp := core.DequeueInputChannels(node, 1)
+				tmp := core.DequeueInputChansByID(node, 1)
 				matVec := tmp[0].Data.(datatypes.Vector[datatypes.FixedPoint])
 
 				// Now compute the dot product of matVec and state.Vector
@@ -113,7 +113,7 @@ func TestNetworkWithBigStep(t *testing.T) {
 	checker := core.SimpleNode[any]{
 		RunFunc: func(node *core.SimpleNode[any]) {
 			for i := 0; i < M; i++ {
-				recv := core.DequeueInputChannels(node, 0)[0]
+				recv := core.DequeueInputChansByID(node, 0)[0]
 				t.Logf("Checking iteration %d", i)
 				t.Logf("Received: %v", recv.Status)
 				recvVal := recv.Data.(datatypes.FixedPoint).ToInt().Int64()

@@ -72,7 +72,7 @@ func TestPMURW(t *testing.T) {
 		readIssue := core.SimpleNode[any]{
 			RunFunc: func(node *core.SimpleNode[any]) {
 				for j := 0; j < numIters; j++ {
-					_ = core.DequeueInputChannels(node, 0)
+					_ = core.DequeueInputChansByID(node, 0)
 					t.Log("Current Time on ReadIssue:", node.TickLowerBound())
 					for i := 0; i < vecWidth; i++ {
 						node.IncrCycles(core.OneTick)
@@ -91,7 +91,7 @@ func TestPMURW(t *testing.T) {
 		readProcess := core.SimpleNode[any]{
 			RunFunc: func(node *core.SimpleNode[any]) {
 				for i := 0; i < totalNums; i++ {
-					read := core.DequeueInputChannels(node, 0)[0]
+					read := core.DequeueInputChansByID(node, 0)[0]
 					node.IncrCycles(core.OneTick)
 					fetched := read.Data.(datatypes.FixedPoint)
 					t.Logf("Fetched %d at iteration %d", fetched.ToInt().Int64(), i)
@@ -111,7 +111,7 @@ func TestPMURW(t *testing.T) {
 		comms = append(comms, readAddr, readResult)
 		readIssue2 := core.SimpleNode[any]{
 			RunFunc: func(node *core.SimpleNode[any]) {
-				_ = core.DequeueInputChannels(node, 0)
+				_ = core.DequeueInputChansByID(node, 0)
 				t.Log("Current Time on ReadIssue2:", node.TickLowerBound())
 				for i := 0; i < numIters; i++ {
 					node.IncrCycles(core.OneTick)
@@ -128,7 +128,7 @@ func TestPMURW(t *testing.T) {
 		readProcess2 := core.SimpleNode[any]{
 			RunFunc: func(node *core.SimpleNode[any]) {
 				for i := 0; i < numIters; i++ {
-					read := core.DequeueInputChannels(node, 0)[0]
+					read := core.DequeueInputChansByID(node, 0)[0]
 					t.Logf("Fetched Data: %v, %s", read, read.Status)
 					node.AdvanceToTime(&read.Time)
 					node.IncrCycles(core.OneTick)

@@ -73,11 +73,32 @@ func FillConst[T any](input []T, fill T) []T {
 
 func Tabulate[T any](input []T, gen func(int) T) []T {
 	for i := range input {
-		input[i] = gen(i)
+		v := i
+		input[i] = gen(v)
 	}
 	return input
 }
 
 func IsEmpty[T any](input []T) bool {
 	return len(input) == 0
+}
+
+func CartesianProduct[T any](inputs ...[]T) <-chan []T {
+	if len(inputs) == 0 {
+		msgChan := make(chan []T, 1)
+		msgChan <- []T{}
+		close(msgChan)
+		return msgChan
+	}
+	msgChan := make(chan []T, 8)
+	go (func() {
+		for _, v := range inputs[0] {
+			subChan := CartesianProduct(inputs[1:]...)
+			for e := range subChan {
+				msgChan <- append([]T{v}, e...)
+			}
+		}
+		close(msgChan)
+	})()
+	return msgChan
 }
