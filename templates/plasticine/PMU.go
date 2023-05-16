@@ -4,16 +4,8 @@ import (
 	"github.com/stanford-ppl/DAM/core"
 	"github.com/stanford-ppl/DAM/datatypes"
 	internal "github.com/stanford-ppl/DAM/templates/plasticine/internal"
+	"github.com/stanford-ppl/DAM/templates/shared/accesstypes"
 	"github.com/stanford-ppl/DAM/utils"
-)
-
-// Re-exposing the access types from pmu internals
-type (
-	Scalar     = internal.Scalar
-	Vector     = internal.Vector
-	Scatter    = internal.Scatter
-	Gather     = internal.Gather
-	AccessType = internal.AccessType
 )
 
 // Plasticine PMUs operate two parallel pipelines that can independently stall:
@@ -27,9 +19,9 @@ type (
 
 type PMU[T datatypes.DAMType] interface {
 	core.Context
-	AddReader(addr *core.CommunicationChannel, outputs []*core.CommunicationChannel, tp AccessType)
+	AddReader(addr *core.CommunicationChannel, outputs []*core.CommunicationChannel, tp accesstypes.AccessType)
 	AddWriter(addr *core.CommunicationChannel, data *core.CommunicationChannel,
-		enable utils.Option[*core.CommunicationChannel], ack []*core.CommunicationChannel, tp AccessType,
+		enable utils.Option[*core.CommunicationChannel], ack []*core.CommunicationChannel, tp accesstypes.AccessType,
 	)
 }
 

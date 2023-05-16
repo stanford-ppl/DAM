@@ -13,6 +13,7 @@ go_library(
         "//datatypes",
         "//utils",
         "@imath//ix",
+        "//templates/shared/accesstypes:accesstypes"
     ],
 )
 

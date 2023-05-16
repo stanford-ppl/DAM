@@ -6,6 +6,7 @@ import (
 
 	"github.com/stanford-ppl/DAM/core"
 	"github.com/stanford-ppl/DAM/datatypes"
+	"github.com/stanford-ppl/DAM/templates/shared/accesstypes"
 	"github.com/stanford-ppl/DAM/utils"
 )
 
@@ -37,7 +38,7 @@ func PktLT[T any](p1, p2 PMUPacket[T]) bool {
 type PMURead struct {
 	Addr    int
 	Outputs []int // Broadcast
-	Type    AccessType
+	Type    accesstypes.AccessType
 }
 
 type PMUReadEntry struct {
@@ -65,7 +66,7 @@ type PMUWrite struct {
 	Data   int
 	Enable int
 	Ack    []int // Broadcast
-	Type   AccessType
+	Type   accesstypes.AccessType
 }
 
 // Take advantage of Go's zero-defaults to set all of
@@ -75,34 +76,6 @@ type PMUBehavior struct {
 	NO_MOD_ADDRESS bool
 
 	USE_DEFAULT_VALUE bool
-}
-
-// A PMU can have the following IO channels:
-// Read:
-// Addr Stream (scalar or vector)
-// Output Stream (scalar or vector)
-// Type:
-// Scalar addr -> vector output (vector load)
-// Scalar addr -> scalar output (scalar load)
-// Vector addr -> vector output (gather)
-
-// This is effectively a sealed class.
-type accessEV struct{}
-
-func (accessEV) accessEVKey() {}
-
-type (
-	Scalar struct{ accessEV }
-	Vector struct {
-		accessEV
-		Width int
-	}
-	Gather  struct{ accessEV }
-	Scatter struct{ accessEV }
-)
-
-type AccessType interface {
-	accessEVKey()
 }
 
 func broadcastEnable(enable utils.Option[datatypes.DAMType], width int) (result []bool) {
@@ -214,12 +187,12 @@ func (pmuReadPipeline *PMUReadPipeline[T]) makeReadPacket(read PMURead) (packet 
 }
 
 func (pmu *PMU[T]) AddWriter(addr *core.CommunicationChannel, data *core.CommunicationChannel,
-	enable utils.Option[*core.CommunicationChannel], ack []*core.CommunicationChannel, tp AccessType,
+	enable utils.Option[*core.CommunicationChannel], ack []*core.CommunicationChannel, tp accesstypes.AccessType,
 ) {
 	pmu.writer.AddWriter(addr, data, enable, ack, tp)
 }
 
-func (pmu *PMU[T]) AddReader(addr *core.CommunicationChannel, outputs []*core.CommunicationChannel, tp AccessType) {
+func (pmu *PMU[T]) AddReader(addr *core.CommunicationChannel, outputs []*core.CommunicationChannel, tp accesstypes.AccessType) {
 	pmu.reader.AddReader(addr, outputs, tp)
 }
 
@@ -247,7 +220,7 @@ func (rp *PMUReadPipeline[T]) Init() {
 	rp.LowLevelIO.InitWithCtx(rp)
 }
 
-func (readPipeline *PMUReadPipeline[T]) AddReader(addr *core.CommunicationChannel, outputs []*core.CommunicationChannel, tp AccessType) {
+func (readPipeline *PMUReadPipeline[T]) AddReader(addr *core.CommunicationChannel, outputs []*core.CommunicationChannel, tp accesstypes.AccessType) {
 	readData := PMURead{
 		Type: tp,
 		Addr: readPipeline.AddInputChannel(addr),
@@ -361,7 +334,7 @@ func (wp *PMUWritePipeline[T]) Run() {
 }
 
 func (pmuWriter *PMUWritePipeline[T]) AddWriter(addr *core.CommunicationChannel, data *core.CommunicationChannel,
-	enable utils.Option[*core.CommunicationChannel], ack []*core.CommunicationChannel, tp AccessType,
+	enable utils.Option[*core.CommunicationChannel], ack []*core.CommunicationChannel, tp accesstypes.AccessType,
 ) {
 	wData := PMUWrite{
 		Type: tp,

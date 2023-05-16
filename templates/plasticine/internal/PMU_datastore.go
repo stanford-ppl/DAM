@@ -10,12 +10,13 @@ import (
 
 	"github.com/stanford-ppl/DAM/core"
 	"github.com/stanford-ppl/DAM/datatypes"
+	"github.com/stanford-ppl/DAM/templates/shared/accesstypes"
 	"github.com/stanford-ppl/DAM/utils"
 )
 
 func (pmu *PMUDataStore[T]) HandleRead(addr datatypes.DAMType, readInfo PMURead, time *core.Time) (result datatypes.DAMType) {
 	switch accessType := readInfo.Type.(type) {
-	case Gather:
+	case accesstypes.Gather:
 		// we're in gather read mode
 		addrVec := addr.(datatypes.Vector[datatypes.FixedPoint])
 		tmp := datatypes.NewVector[T](addrVec.Width())
@@ -25,11 +26,11 @@ func (pmu *PMUDataStore[T]) HandleRead(addr datatypes.DAMType, readInfo PMURead,
 		}
 		result = tmp
 
-	case Scalar:
+	case accesstypes.Scalar:
 		// scalar read mode
 		intAddr := addr.(datatypes.FixedPoint).ToInt().Int64()
 		result = pmu.Read(intAddr, time)
-	case Vector:
+	case accesstypes.Vector:
 		//  addr, vector result
 		tmp := datatypes.NewVector[T](accessType.Width)
 		addr := addr.(datatypes.FixedPoint).ToInt().Int64()
@@ -51,12 +52,12 @@ func (pmu *PMUDataStore[T]) HandleWrite(addr datatypes.DAMType, enable utils.Opt
 	}
 	enables := broadcastEnable(enable, width)
 	switch writeInfo.Type.(type) {
-	case Scalar:
+	case accesstypes.Scalar:
 		if !enables[0] {
 			break
 		}
 		pmu.Write(addrScalar.ToInt().Int64(), data.(T), time)
-	case Vector:
+	case accesstypes.Vector:
 		addrOffset := addrScalar.ToInt().Int64()
 		for i := 0; i < dataVec.Width(); i++ {
 			if !enables[i] {
@@ -64,7 +65,7 @@ func (pmu *PMUDataStore[T]) HandleWrite(addr datatypes.DAMType, enable utils.Opt
 			}
 			pmu.Write(addrOffset+int64(i), dataVec.Get(i), time)
 		}
-	case Scatter:
+	case accesstypes.Scatter:
 		if dataVec.Width() != addrVec.Width() {
 			panic(fmt.Sprintf("Mismatch between data and addr widths in scatter: %d vs %d", dataVec.Width(), dataVec.Width()))
 		}

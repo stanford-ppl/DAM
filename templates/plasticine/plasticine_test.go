@@ -6,6 +6,7 @@ import (
 
 	"github.com/stanford-ppl/DAM/core"
 	"github.com/stanford-ppl/DAM/datatypes"
+	"github.com/stanford-ppl/DAM/templates/shared/accesstypes"
 	"github.com/stanford-ppl/DAM/utils"
 )
 
@@ -61,7 +62,7 @@ func TestPMURW(t *testing.T) {
 		writer.AddOutputChannel(wData)
 		writer.AddOutputChannel(wAddr)
 		ctx.AddChild(&writer)
-		pmu.AddWriter(wAddr, wData, utils.None[*core.CommunicationChannel](), []*core.CommunicationChannel{wAck1, wAck2}, Vector{})
+		pmu.AddWriter(wAddr, wData, utils.None[*core.CommunicationChannel](), []*core.CommunicationChannel{wAck1, wAck2}, accesstypes.Vector{})
 	}
 
 	// Scalar read
@@ -101,7 +102,7 @@ func TestPMURW(t *testing.T) {
 		readProcess.AddInputChannel(readResult)
 		ctx.AddChild(&readProcess)
 
-		pmu.AddReader(readAddr, []*core.CommunicationChannel{readResult}, Scalar{})
+		pmu.AddReader(readAddr, []*core.CommunicationChannel{readResult}, accesstypes.Scalar{})
 	}
 
 	// Vector read
@@ -142,7 +143,7 @@ func TestPMURW(t *testing.T) {
 		}
 		readProcess2.AddInputChannel(readResult)
 		ctx.AddChild(&readProcess2)
-		pmu.AddReader(readAddr, []*core.CommunicationChannel{readResult}, Vector{Width: vecWidth})
+		pmu.AddReader(readAddr, []*core.CommunicationChannel{readResult}, accesstypes.Vector{Width: vecWidth})
 	}
 
 	ctx.Init()
