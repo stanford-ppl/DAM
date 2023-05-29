@@ -10,7 +10,8 @@ import (
 )
 
 // This test runs a Matrix-Vector (M x N) x (N) product
-// This assumes a black-box dot product operation capable of doing a N-element dot product.
+// This assumes a black-box dot product operation
+// capable of doing a N-element dot product.
 func TestNetworkWithBigStep(t *testing.T) {
 	M := 1024
 	N := 16
@@ -22,10 +23,13 @@ func TestNetworkWithBigStep(t *testing.T) {
 
 	channelSize := 8
 
-	// We have three nodes -- a matrix producer, a vector producer, and a dot product unit.
+	// We have three nodes --
+	// a matrix producer, a vector producer, and a dot product unit.
 
-	matToDot := core.MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](timePerVecInMatrix + 1)
-	vecToDot := core.MakeCommunicationChannel[datatypes.Vector[datatypes.FixedPoint]](channelSize)
+	matToDot := core.MakeCommunicationChannel[datatypes.
+		Vector[datatypes.FixedPoint]](timePerVecInMatrix + 1)
+	vecToDot := core.MakeCommunicationChannel[datatypes.
+		Vector[datatypes.FixedPoint]](channelSize)
 	dotOutput := core.MakeCommunicationChannel[datatypes.FixedPoint](M)
 
 	ctx := core.MakePrimitiveContext(nil)
@@ -38,7 +42,8 @@ func TestNetworkWithBigStep(t *testing.T) {
 				val.SetInt(big.NewInt(int64(i)))
 				result.Set(i, val)
 			}
-			node.OutputChannel(0).Enqueue(core.MakeChannelElement(node.TickLowerBound(), result))
+			node.OutputChannel(0).
+				Enqueue(core.MakeChannelElement(node.TickLowerBound(), result))
 		},
 	}
 	vecProducer.AddOutputChannel(vecToDot)
@@ -58,7 +63,8 @@ func TestNetworkWithBigStep(t *testing.T) {
 				nextTick := node.TickLowerBound()
 				nextTick.Add(nextTick, core.NewTime(int64(timePerVecInMatrix)))
 				core.AdvanceUntilCanEnqueue(node, 0)
-				node.OutputChannel(0).Enqueue(core.MakeChannelElement(node.TickLowerBound(), result))
+				node.OutputChannel(0).Enqueue(core.
+					MakeChannelElement(node.TickLowerBound(), result))
 				node.AdvanceToTime(nextTick)
 			}
 		},
@@ -80,7 +86,8 @@ func TestNetworkWithBigStep(t *testing.T) {
 					node.State.HasInitialized = true
 					tmp := core.DequeueInputChansByID(node, 0)
 					vec := tmp[0]
-					node.State.Vector = vec.Data.(datatypes.Vector[datatypes.FixedPoint])
+					node.State.Vector = vec.Data.(datatypes.
+						Vector[datatypes.FixedPoint])
 				}
 				tmp := core.DequeueInputChansByID(node, 1)
 				matVec := tmp[0].Data.(datatypes.Vector[datatypes.FixedPoint])
@@ -99,7 +106,8 @@ func TestNetworkWithBigStep(t *testing.T) {
 				outputTime.Add(node.TickLowerBound(), tick)
 				core.AdvanceUntilCanEnqueue(node, 0)
 				t.Logf("Enqueuing result %d (simulated time %v)", j, outputTime)
-				node.OutputChannel(0).Enqueue(core.MakeChannelElement(outputTime, sum))
+				node.OutputChannel(0).Enqueue(core.
+					MakeChannelElement(outputTime, sum))
 				node.IncrCycles(tick)
 			}
 			t.Logf("Dot Product Finished")
@@ -117,13 +125,15 @@ func TestNetworkWithBigStep(t *testing.T) {
 				t.Logf("Checking iteration %d", i)
 				t.Logf("Received: %v", recv.Status)
 				recvVal := recv.Data.(datatypes.FixedPoint).ToInt().Int64()
-				// The reference value for element i is Sum(a * (a + i) for a in range(N))
+				// The reference value for element i is
+				// Sum(a * (a + i) for a in range(N))
 				var refVal int = 0
 				for tmp := 0; tmp < N; tmp++ {
 					refVal += tmp * (tmp + i)
 				}
 				if recvVal != int64(refVal) {
-					t.Errorf("Error at element %d, %d != %d", i, recvVal, refVal)
+					t.Errorf("Error at element %d, %d != %d",
+						i, recvVal, refVal)
 				}
 			}
 		},
