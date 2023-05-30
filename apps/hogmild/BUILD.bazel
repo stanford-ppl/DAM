@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "hogmild",
-    srcs = ["hogmild.go"],
+    srcs = [
+        "hogmild.go",
+        "params_server.go",
+    ],
     importpath = "github.com/stanford-ppl/DAM/apps/hogmild",
     visibility = ["//visibility:public"],
     deps = [
