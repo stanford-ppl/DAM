@@ -56,4 +56,8 @@ func NewTime(t int64) *Time {
 	return &time
 }
 
+func (t *Time) GetUnderlying() big.Int {
+	return t.time
+}
+
 var OneTick = NewTime(1)
