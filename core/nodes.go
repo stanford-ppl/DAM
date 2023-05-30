@@ -184,6 +184,15 @@ func (sn *SimpleNode[T]) Run() {
 }
 
 func (sn *SimpleNode[T]) Init() {
-	sn.State = new(T)
 	sn.LowLevelIO.InitWithCtx(sn)
+}
+
+func MakeSimpleNode[T any](
+	run func(node *SimpleNode[T]),
+	state *T,
+) *SimpleNode[T] {
+	node := new(SimpleNode[T])
+	node.RunFunc = run
+	node.State = state
+	return node
 }
