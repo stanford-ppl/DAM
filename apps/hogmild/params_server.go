@@ -32,9 +32,42 @@ func clearFreeBanks(node *core.SimpleNode[paramsServerState]) {
 	node.State.bankStates = newBankStates
 }
 
+func sendSample(node *core.SimpleNode[paramsServerState], idx int, done bool) {
+	s := sample{
+		done:          done,
+		sampleId:      node.State.nextSample,
+		weightVersion: node.State.currWeightVersion,
+	}
+
+	arrivalTime := node.TickLowerBound()
+	arrivalTime.Add(arrivalTime, core.NewTime(
+		int64(node.State.conf.sendingTime+node.State.conf.networkDelay)))
+	elem := core.MakeChannelElement(node.TickLowerBound(), s)
+	node.OutputChannel(idx).Enqueue(elem)
+
+	if !done {
+		node.State.nextSample += 1
+		nextReadyTick := node.TickLowerBound()
+		nextReadyTick.Add(nextReadyTick,
+			core.NewTime(int64(node.State.conf.sendingTime)))
+		node.State.bankStates = append(node.State.bankStates, nextReadyTick)
+	}
+}
+
+func hasMoreSamples(node *core.SimpleNode[paramsServerState]) bool {
+	return node.State.nextSample < node.State.conf.nSamples
+}
+
+func hasFreeWeightBanks(node *core.SimpleNode[paramsServerState]) bool {
+	return len(node.State.bankStates) < int(node.State.conf.nWeightBanks)
+}
+
+func doneSending(node *core.SimpleNode[paramsServerState]) bool {
+	return !hasMoreSamples(node) || !hasFreeWeightBanks(node)
+}
+
 func sendSamples(node *core.SimpleNode[paramsServerState]) {
-	if node.State.nextSample == node.State.conf.nSamples ||
-		len(node.State.bankStates) == int(node.State.conf.nWeightBanks) {
+	if !hasFreeWeightBanks(node) {
 		return
 	}
 
@@ -43,25 +76,10 @@ func sendSamples(node *core.SimpleNode[paramsServerState]) {
 			continue
 		}
 
-		s := sample{
-			sampleId:      node.State.nextSample,
-			weightVersion: node.State.currWeightVersion,
-		}
-		arrivalTime := node.TickLowerBound()
-		arrivalTime.Add(arrivalTime, core.NewTime(
-			int64(node.State.conf.sendingTime+node.State.conf.networkDelay)))
-		elem := core.MakeChannelElement(node.TickLowerBound(), s)
-		node.OutputChannel(int(i)).Enqueue(elem)
+		sendSample(node, int(i), false)
 
-		node.State.nextSample += 1
-		nextReadyTick := node.TickLowerBound()
-		nextReadyTick.Add(nextReadyTick,
-			core.NewTime(int64(node.State.conf.sendingTime)))
-		node.State.bankStates = append(node.State.bankStates, nextReadyTick)
-
-		if len(node.State.bankStates) == int(node.State.conf.nWeightBanks) ||
-			node.State.nextSample == node.State.conf.nSamples {
-			break
+		if doneSending(node) {
+			return
 		}
 	}
 }
@@ -99,8 +117,14 @@ func makeBundles(max int) [][]int {
 	return a
 }
 
+func shutdown(node *core.SimpleNode[paramsServerState]) {
+	for i := 0; i < int(node.State.conf.nWorkers); i++ {
+		sendSample(node, i, true)
+	}
+}
+
 func runParamsServer(node *core.SimpleNode[paramsServerState]) {
-	for node.State.nextSample < node.State.conf.nSamples {
+	for hasMoreSamples(node) {
 		clearFreeBanks(node)
 		sendSamples(node)
 		tryReceiveSamples(node)
@@ -122,4 +146,6 @@ func runParamsServer(node *core.SimpleNode[paramsServerState]) {
 			}
 		}
 	}
+
+	shutdown(node)
 }

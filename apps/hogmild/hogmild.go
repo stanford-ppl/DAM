@@ -24,6 +24,7 @@ type config struct {
 }
 
 type sample struct {
+	done          bool
 	sampleId      uint
 	weightVersion uint
 }

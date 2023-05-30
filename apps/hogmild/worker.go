@@ -14,6 +14,11 @@ func runWorker(node *core.SimpleNode[workerState]) {
 			case core.Ok:
 				// TODO: Add pipeling
 				ce := ce_with_status.ChannelElement
+				s := ce.Data.(sample)
+				if s.done {
+					return
+				}
+
 				ce.Time.Add(&ce.Time,
 					core.NewTime(int64(node.State.conf.gradientLatency)))
 				node.OutputChannel(0).Enqueue(ce)
