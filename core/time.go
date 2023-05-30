@@ -56,7 +56,7 @@ func NewTime(t int64) *Time {
 	return &time
 }
 
-func (t *Time) GetUnderlying() big.Int {
+func (t *Time) GetTime() big.Int {
 	return t.time
 }
 
