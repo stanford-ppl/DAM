@@ -5,5 +5,8 @@ go_library(
     srcs = ["hogmild.go"],
     importpath = "github.com/stanford-ppl/DAM/apps/hogmild",
     visibility = ["//visibility:public"],
-    deps = ["//core"],
+    deps = [
+        "//core",
+        "//datatypes",
+    ],
 )
