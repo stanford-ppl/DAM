@@ -13,8 +13,7 @@ type paramsServerState struct {
 	// When the bank will be ready to send another sample
 	bankStates []*core.Time
 
-	// This represent the sequence of updates to the weights.
-	// Each sample represent a gradient that is folded into the weights,
+	// This represent the sequence of updates to the weights. Each sample represent a gradient that is folded into the weights,
 	// the sampleId represent the data used to calculate the gradient,
 	// and the weightVersion is the iteration of the weights used.
 	// weightVersion starts at 0,
@@ -100,13 +99,7 @@ func makeBundles(max int) [][]int {
 	return a
 }
 
-func shutDownWorkers(node *core.SimpleNode[paramsServerState]) {
-	for i := 0; i < int(node.State.conf.nWorkers); i++ {
-		node.OutputChannel(i).CloseOutput()
-	}
-}
-
-func paramsServer(node *core.SimpleNode[paramsServerState]) {
+func runParamsServer(node *core.SimpleNode[paramsServerState]) {
 	for node.State.nextSample < node.State.conf.nSamples {
 		clearFreeBanks(node)
 		sendSamples(node)
@@ -129,6 +122,4 @@ func paramsServer(node *core.SimpleNode[paramsServerState]) {
 			}
 		}
 	}
-
-	shutDownWorkers(node)
 }
