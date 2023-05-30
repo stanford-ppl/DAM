@@ -6,8 +6,8 @@ go_library(
         "context.go",
         "logging.go",
         "network.go",
-        "nodeutils.go",
         "nodes.go",
+        "nodeutils.go",
         "tag.go",
         "time.go",
     ],
@@ -24,6 +24,14 @@ go_test(
     name = "core_test",
     size = "small",
     srcs = ["core_test.go"],
+    embed = [":core"],
+    deps = ["//datatypes"],
+)
+
+go_test(
+    name = "time_test",
+    size = "small",
+    srcs = ["time_test.go"],
     embed = [":core"],
     deps = ["//datatypes"],
 )
