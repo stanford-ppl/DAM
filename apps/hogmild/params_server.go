@@ -100,6 +100,12 @@ func makeBundles(max int) [][]int {
 	return a
 }
 
+func shutDownWorkers(node *core.SimpleNode[paramsServerState]) {
+    for i := 0; i < int(node.State.conf.nWorkers); i++ {
+        node.OutputChannel(i).CloseOutput()
+    }
+}
+
 func paramsServer(node *core.SimpleNode[paramsServerState]) {
 	for node.State.nextSample < node.State.conf.nSamples {
 		clearFreeBanks(node)
@@ -123,4 +129,6 @@ func paramsServer(node *core.SimpleNode[paramsServerState]) {
 			}
 		}
 	}
+
+	shutDownWorkers(node)
 }
