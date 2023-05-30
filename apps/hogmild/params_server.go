@@ -79,7 +79,7 @@ func foldGradient(node *core.SimpleNode[paramsServerState], ce *core.ChannelElem
 
 func tryReceiveSamples(node *core.SimpleNode[paramsServerState]) {
 	for i := uint(0); i < node.State.conf.nWorkers; i++ {
-		ce, status := node.InputChannel(int(i)).Peek()
+		ce, status := node.InputChannel(int(i)).Dequeue()
 
 		switch status {
 		case core.Ok:
@@ -101,9 +101,9 @@ func makeBundles(max int) [][]int {
 }
 
 func shutDownWorkers(node *core.SimpleNode[paramsServerState]) {
-    for i := 0; i < int(node.State.conf.nWorkers); i++ {
-        node.OutputChannel(i).CloseOutput()
-    }
+	for i := 0; i < int(node.State.conf.nWorkers); i++ {
+		node.OutputChannel(i).CloseOutput()
+	}
 }
 
 func paramsServer(node *core.SimpleNode[paramsServerState]) {
