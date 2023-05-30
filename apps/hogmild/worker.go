@@ -1,4 +1,4 @@
-package hogmild
+package main
 
 import "github.com/stanford-ppl/DAM/core"
 

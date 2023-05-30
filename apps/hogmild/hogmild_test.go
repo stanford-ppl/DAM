@@ -1,4 +1,4 @@
-package hogmild
+package main
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ func TestHogmildSequential(t *testing.T) {
 		nWeightBanks:    1,
 	}
 
-	updateLogs := hogmild(&conf)
+	updateLogs, _ := hogmild(&conf)
 
 	assert_uint_eq(t, conf.nSamples, uint(len(updateLogs)))
 

@@ -1,6 +1,8 @@
-package hogmild
+package main
 
 import (
+	"flag"
+	"fmt"
 	"math/big"
 
 	"github.com/stanford-ppl/DAM/core"
@@ -40,7 +42,7 @@ func (s sample) Payload() any {
 
 var _ datatypes.DAMType = (*sample)(nil)
 
-func hogmild(conf *config) []*sample {
+func hogmild(conf *config) ([]*sample, core.Time) {
 	ctx := core.MakePrimitiveContext(nil)
 
 	paramsState := paramsServerState{
@@ -73,5 +75,33 @@ func hogmild(conf *config) []*sample {
 	ctx.Init()
 	ctx.Run()
 
-	return paramsState.updateLog
+	return paramsState.updateLog, *paramsServerNode.TickLowerBound()
+}
+
+func main() {
+	conf := new(config)
+	flag.UintVar(&conf.sendingTime, "sendingTime", 8,
+		"How long it takes to serialize a packet onto the network")
+	flag.UintVar(&conf.networkDelay, "networkDelay", 16,
+		"How long does it take a network to traverse the network")
+	flag.UintVar(&conf.foldLatency, "foldLatency", 32,
+		"Latency of folding in one gradient")
+	flag.UintVar(&conf.gradientLatency, "gradientLatency", 64,
+		"Latency of computing one gradient")
+	flag.UintVar(&conf.fifo_depth, "fifo_depth", 8,
+		"Depth of channel buffers")
+	flag.UintVar(&conf.nSamples, "nSamples", 512,
+		"Number of data samples there is")
+	flag.UintVar(&conf.nWorkers, "nWorkers", 16,
+		"Number of workers available to compute the gradient")
+	flag.UintVar(&conf.nWeightBanks, "nWeightBanks", 8,
+		"Number of banked storage units for weights")
+	flag.Parse()
+
+	updateLogs, finalTick := hogmild(conf)
+	finalTime := finalTick.GetTime()
+	fmt.Println(finalTime.String())
+	for _, s := range updateLogs {
+		fmt.Printf("%d, %d\n", s.sampleId, s.weightVersion)
+	}
 }

@@ -1,13 +1,12 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_test")
 
-go_library(
+go_binary(
     name = "hogmild",
     srcs = [
         "hogmild.go",
         "params_server.go",
         "worker.go",
     ],
-    importpath = "github.com/stanford-ppl/DAM/apps/hogmild",
     visibility = ["//visibility:public"],
     deps = [
         "//core",
@@ -18,6 +17,14 @@ go_library(
 go_test(
     name = "hogmild_test",
     size = "small",
-    srcs = ["hogmild_test.go"],
-    embed = [":hogmild"],
+    srcs = [
+        "hogmild.go",
+        "hogmild_test.go",
+        "params_server.go",
+        "worker.go",
+    ],
+    deps = [
+        "//core",
+        "//datatypes",
+    ],
 )
