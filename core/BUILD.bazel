@@ -33,5 +33,4 @@ go_test(
     size = "small",
     srcs = ["time_test.go"],
     embed = [":core"],
-    deps = ["//datatypes"],
 )
