@@ -14,13 +14,16 @@ type config struct {
 	networkDelay uint
 
 	foldLatency     uint
+	foldII          uint
 	gradientLatency uint
+	gradientII      uint
 
 	fifoDepth uint
 
 	nSamples     uint
 	nWorkers     uint
 	nWeightBanks uint
+	nFolders     uint
 }
 
 type sample struct {
@@ -43,40 +46,47 @@ func (s sample) Payload() any {
 
 var _ datatypes.DAMType = (*sample)(nil)
 
+func makeParamsServer(
+	ctx core.ParentContext,
+	conf *config,
+) *core.SimpleNode[paramsServerState] {
+	paramsState := newParamsState(conf)
+	paramsServerNode := core.MakeSimpleNode(runParamsServer, paramsState)
+	ctx.AddChild(paramsServerNode)
+	return paramsServerNode
+}
+
+func addWorker(
+	ctx core.ParentContext,
+	conf *config,
+	paramsServerNode *core.SimpleNode[paramsServerState],
+) {
+	workerState := newWorkerState(conf)
+	worker := core.MakeSimpleNode(runWorker, workerState)
+	ctx.AddChild(worker)
+
+	sampleChan := core.MakeCommunicationChannel[sample](
+		int(conf.fifoDepth))
+	paramsServerNode.AddOutputChannel(sampleChan)
+	worker.AddInputChannel(sampleChan)
+
+	updateChan := core.MakeCommunicationChannel[sample](
+		int(conf.fifoDepth))
+	worker.AddOutputChannel(updateChan)
+	paramsServerNode.AddInputChannel(updateChan)
+}
+
 func hogmild(conf *config) ([]*sample, core.Time) {
 	ctx := core.MakePrimitiveContext(nil)
-
-	paramsState := paramsServerState{
-		conf:              conf,
-		nextSample:        0,
-		currWeightVersion: 0,
-		bankStates:        make([]*core.Time, 0),
-		updateLog:         make([]*sample, 0),
-	}
-	paramsServerNode := core.MakeSimpleNode(runParamsServer, &paramsState)
-	ctx.AddChild(paramsServerNode)
-
+	paramsServerNode := makeParamsServer(ctx, conf)
 	for i := 0; i < int(conf.nWorkers); i++ {
-		workerState := new(workerState)
-		workerState.conf = conf
-		worker := core.MakeSimpleNode(runWorker, workerState)
-		ctx.AddChild(worker)
-
-		sampleChan := core.MakeCommunicationChannel[sample](
-			int(conf.fifoDepth))
-		paramsServerNode.AddOutputChannel(sampleChan)
-		worker.AddInputChannel(sampleChan)
-
-		updateChan := core.MakeCommunicationChannel[sample](
-			int(conf.fifoDepth))
-		worker.AddOutputChannel(updateChan)
-		paramsServerNode.AddInputChannel(updateChan)
+		addWorker(ctx, conf, paramsServerNode)
 	}
 
 	ctx.Init()
 	ctx.Run()
 
-	return paramsState.updateLog, *paramsServerNode.TickLowerBound()
+	return paramsServerNode.State.updateLog, *paramsServerNode.TickLowerBound()
 }
 
 func parseConfig() *config {
@@ -88,16 +98,22 @@ func parseConfig() *config {
 		"How long does it take a network to traverse the network")
 	flag.UintVar(&conf.foldLatency, "foldLatency", 32,
 		"Latency of folding in one gradient")
+	flag.UintVar(&conf.foldII, "foldII", 4,
+		"Initiation interval of folding in one batch of  gradients")
+	flag.UintVar(&conf.gradientII, "gradientII", 4,
+		"Initiation interval of computing in one gradient")
 	flag.UintVar(&conf.gradientLatency, "gradientLatency", 64,
 		"Latency of computing one gradient")
 	flag.UintVar(&conf.fifoDepth, "fifoDepth", 8,
 		"Depth of channel buffers")
-	flag.UintVar(&conf.nSamples, "nSamples", 512,
+	flag.UintVar(&conf.nSamples, "nSamples", 128,
 		"Number of data samples there is")
-	flag.UintVar(&conf.nWorkers, "nWorkers", 16,
+	flag.UintVar(&conf.nWorkers, "nWorkers", 1,
 		"Number of workers available to compute the gradient")
 	flag.UintVar(&conf.nWeightBanks, "nWeightBanks", 8,
 		"Number of banked storage units for weights")
+	flag.UintVar(&conf.nFolders, "nFolders", 8,
+		"How many gradients can be folded in parallel")
 	flag.Parse()
 
 	return conf
