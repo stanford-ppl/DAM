@@ -16,7 +16,7 @@ type config struct {
 	foldLatency     uint
 	gradientLatency uint
 
-	fifo_depth uint
+	fifoDepth uint
 
 	nSamples     uint
 	nWorkers     uint
@@ -63,12 +63,12 @@ func hogmild(conf *config) ([]*sample, core.Time) {
 		ctx.AddChild(worker)
 
 		sampleChan := core.MakeCommunicationChannel[sample](
-			int(conf.fifo_depth))
+			int(conf.fifoDepth))
 		paramsServerNode.AddOutputChannel(sampleChan)
 		worker.AddInputChannel(sampleChan)
 
 		updateChan := core.MakeCommunicationChannel[sample](
-			int(conf.fifo_depth))
+			int(conf.fifoDepth))
 		worker.AddOutputChannel(updateChan)
 		paramsServerNode.AddInputChannel(updateChan)
 	}
@@ -79,8 +79,9 @@ func hogmild(conf *config) ([]*sample, core.Time) {
 	return paramsState.updateLog, *paramsServerNode.TickLowerBound()
 }
 
-func main() {
+func parseConfig() *config {
 	conf := new(config)
+
 	flag.UintVar(&conf.sendingTime, "sendingTime", 8,
 		"How long it takes to serialize a packet onto the network")
 	flag.UintVar(&conf.networkDelay, "networkDelay", 16,
@@ -89,7 +90,7 @@ func main() {
 		"Latency of folding in one gradient")
 	flag.UintVar(&conf.gradientLatency, "gradientLatency", 64,
 		"Latency of computing one gradient")
-	flag.UintVar(&conf.fifo_depth, "fifo_depth", 8,
+	flag.UintVar(&conf.fifoDepth, "fifoDepth", 8,
 		"Depth of channel buffers")
 	flag.UintVar(&conf.nSamples, "nSamples", 512,
 		"Number of data samples there is")
@@ -99,10 +100,19 @@ func main() {
 		"Number of banked storage units for weights")
 	flag.Parse()
 
-	updateLogs, finalTick := hogmild(conf)
+	return conf
+}
+
+func logResult(updateLogs []*sample, finalTick core.Time) {
 	finalTime := finalTick.GetTime()
 	fmt.Println(finalTime.String())
 	for _, s := range updateLogs {
 		fmt.Printf("%d, %d\n", s.sampleId, s.weightVersion)
 	}
+}
+
+func main() {
+	conf := parseConfig()
+	updateLogs, finalTick := hogmild(conf)
+	logResult(updateLogs, finalTick)
 }

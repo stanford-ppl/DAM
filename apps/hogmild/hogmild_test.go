@@ -17,7 +17,7 @@ func TestHogmildSequential(t *testing.T) {
 		networkDelay:    32,
 		foldLatency:     32,
 		gradientLatency: 64,
-		fifo_depth:      8,
+		fifoDepth:      8,
 		nSamples:        4,
 		nWorkers:        1,
 		nWeightBanks:    1,

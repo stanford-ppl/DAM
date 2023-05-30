@@ -117,20 +117,7 @@ func makeBundles(max int) [][]int {
 	return a
 }
 
-func shutdown(node *core.SimpleNode[paramsServerState]) {
-	for i := 0; i < int(node.State.conf.nWorkers); i++ {
-		sendSample(node, i, true)
-	}
-}
-
-func runParamsServer(node *core.SimpleNode[paramsServerState]) {
-	for hasMoreSamples(node) {
-		clearFreeBanks(node)
-		sendSamples(node)
-		tryReceiveSamples(node)
-		node.IncrCycles(core.NewTime(1))
-	}
-
+func receiveAllSamples(node *core.SimpleNode[paramsServerState]) {
 	channelBundles := makeBundles(int(node.State.conf.nWorkers))
 	for len(node.State.updateLog) < int(node.State.conf.nSamples) {
 		err, ces := core.DequeueInputBundles(node, channelBundles...)
@@ -146,6 +133,23 @@ func runParamsServer(node *core.SimpleNode[paramsServerState]) {
 			}
 		}
 	}
+}
+
+func shutdown(node *core.SimpleNode[paramsServerState]) {
+	for i := 0; i < int(node.State.conf.nWorkers); i++ {
+		sendSample(node, i, true)
+	}
+}
+
+func runParamsServer(node *core.SimpleNode[paramsServerState]) {
+	for hasMoreSamples(node) {
+		clearFreeBanks(node)
+		sendSamples(node)
+		tryReceiveSamples(node)
+		node.IncrCycles(core.NewTime(1))
+	}
+
+	receiveAllSamples(node)
 
 	shutdown(node)
 }
